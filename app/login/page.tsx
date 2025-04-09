@@ -29,9 +29,11 @@ export default function Login() {
 			const res = await $api.post('/user/google', {
 				credentials: credentialResponse.credential,
 			})
-			const { access_token, refresh_token } = res.data
-			localStorage.setItem('accessToken', access_token)
-			localStorage.setItem('refreshToken', refresh_token)
+			const { access_token, refresh_token } = res.data || {}
+			if (access_token && refresh_token) {
+				localStorage.setItem('accessToken', access_token)
+				localStorage.setItem('refreshToken', refresh_token)
+			}
 			router.push('/')
 		} catch (err: any) {
 			setError(err.response?.data?.message || 'Google login error')

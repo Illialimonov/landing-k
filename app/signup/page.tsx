@@ -13,9 +13,15 @@ export default function Register() {
 	const handleRegister = async (e: React.FormEvent) => {
 		e.preventDefault()
 		try {
-			await $api.post('/user/register', { email, password })
+			console.log('Sending registration request:', { email, password })
+			const res = await $api.post('/user/register', {
+				email,
+				password,
+			})
+			console.log('Registration response:', res.data)
 			router.push('/login')
 		} catch (err: any) {
+			console.error('Registration error:', err.response?.data || err.message)
 			setError(err.response?.data?.message || 'Registration error')
 		}
 	}
