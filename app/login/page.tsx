@@ -4,20 +4,23 @@ import $api from '@/lib/http'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import { jwtDecode } from 'jwt-decode'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Login() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [error, setError] = useState('')
 	const router = useRouter()
+	const { login } = useAuth()
 
 	const handleLogin = async (e: React.FormEvent) => {
 		e.preventDefault()
 		try {
 			const res = await $api.post('/user/login', { email, password })
-			const { access_token, refresh_token } = res.data
-			localStorage.setItem('accessToken', access_token)
-			localStorage.setItem('refreshToken', refresh_token)
+			const { access_token, refresh_token, userDetails } = res.data
+			const userEmail = email
+			await login(access_token, refresh_token, userEmail)
 			router.push('/')
 		} catch (err: any) {
 			setError(err.response?.data?.message || 'Login error')
@@ -26,16 +29,25 @@ export default function Login() {
 
 	const handleGoogleLogin = async (credentialResponse: any) => {
 		try {
+			const decoded: any = jwtDecode(credentialResponse.credential)
+			const googleEmail = decoded.email
+			console.log(
+				'Sending Google login request:',
+				credentialResponse.credential
+			)
 			const res = await $api.post('/user/google', {
 				credentials: credentialResponse.credential,
 			})
+			console.log('Google login response:', res.data)
 			const { access_token, refresh_token } = res.data || {}
 			if (access_token && refresh_token) {
-				localStorage.setItem('accessToken', access_token)
-				localStorage.setItem('refreshToken', refresh_token)
+				await login(access_token, refresh_token, googleEmail)
+				router.push('/')
+			} else {
+				setError('Google login failed: no tokens received')
 			}
-			router.push('/')
 		} catch (err: any) {
+			console.error('Google login error:', err.response?.data || err.message)
 			setError(err.response?.data?.message || 'Google login error')
 		}
 	}

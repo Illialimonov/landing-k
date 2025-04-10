@@ -3,12 +3,16 @@
 import $api from '@/lib/http'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import { jwtDecode } from 'jwt-decode'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Register() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [error, setError] = useState('')
 	const router = useRouter()
+	const { login } = useAuth()
 
 	const handleRegister = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -23,6 +27,34 @@ export default function Register() {
 		} catch (err: any) {
 			console.error('Registration error:', err.response?.data || err.message)
 			setError(err.response?.data?.message || 'Registration error')
+		}
+	}
+
+	const handleGoogleRegister = async (credentialResponse: any) => {
+		try {
+			const decoded: any = jwtDecode(credentialResponse.credential)
+			const googleEmail = decoded.email
+			console.log(
+				'Sending Google registration request:',
+				credentialResponse.credential
+			)
+			const res = await $api.post('/user/google', {
+				credentials: credentialResponse.credential,
+			})
+			console.log('Google registration response:', res.data)
+			const { access_token, refresh_token } = res.data || {}
+			if (access_token && refresh_token) {
+				await login(access_token, refresh_token, googleEmail)
+				router.push('/')
+			} else {
+				router.push('/login') // Если токены не пришли, считаем, что регистрация прошла, но нужен логин
+			}
+		} catch (err: any) {
+			console.error(
+				'Google registration error:',
+				err.response?.data || err.message
+			)
+			setError(err.response?.data?.message || 'Google registration error')
 		}
 	}
 
@@ -79,6 +111,20 @@ export default function Register() {
 							Sign up
 						</button>
 					</form>
+
+					<div className='my-6 text-center text-muted-foreground'>or</div>
+
+					<GoogleOAuthProvider
+						clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}
+					>
+						<div className='flex justify-center'>
+							<GoogleLogin
+								onSuccess={handleGoogleRegister}
+								onError={() => setError('Google registration error')}
+							/>
+						</div>
+					</GoogleOAuthProvider>
+
 					<p className='text-center text-muted-foreground mt-6'>
 						Already have an account?{' '}
 						<a href='/login' className='text-primary hover:underline'>

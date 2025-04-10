@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select'
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
+import { useToast } from '@/hooks/use-toast'
+import $api from '@/lib/http'
 
 const FILLER_OPTIONS = [
 	{ value: 'gta5', label: 'GTA 5', icon: '/icons/gta-5.png' },
@@ -30,13 +32,52 @@ const FILLER_OPTIONS = [
 	{ value: 'random', label: 'Random', icon: '/icons/random.png' },
 ]
 
+const CLIP_OPTIONS = [
+	{ value: '1', label: '1 Clip' },
+	{ value: '3', label: '3 Clips' },
+	{ value: '5', label: '5 Clips' },
+]
+
 export function VideoConverter() {
 	const [youtubeUrl, setYoutubeUrl] = useState('')
 	const [filler, setFiller] = useState('random')
+	const [numberOfClips, setNumberOfClips] = useState('3')
+	const [isLoading, setIsLoading] = useState<boolean>(false)
+	const { toast } = useToast()
 
-	const handleConvert = () => {
-		// Will implement conversion logic later
-		console.log('Converting:', { youtubeUrl, filler })
+	const handleConvert = async () => {
+		if (!youtubeUrl.trim()) {
+			toast({
+				variant: 'destructive',
+				title: 'Error',
+				description: 'Please enter a YouTube URL',
+			})
+			return
+		}
+
+		setIsLoading(true)
+		try {
+			const response = await $api.post('/create', {
+				youtubeURL: youtubeUrl,
+				filler,
+				numberOfClips: parseInt(numberOfClips),
+			})
+			console.log('Conversion response:', response.data)
+			toast({
+				title: 'Success',
+				description: 'Clips have been generated successfully!',
+			})
+			setYoutubeUrl('')
+		} catch (err: any) {
+			console.error('Conversion failed:', err.response?.data || err.message)
+			toast({
+				variant: 'destructive',
+				title: 'Error',
+				description: err.response?.data?.message || 'Failed to generate clips',
+			})
+		} finally {
+			setIsLoading(false)
+		}
 	}
 
 	return (
@@ -49,9 +90,10 @@ export function VideoConverter() {
 						placeholder='Paste YouTube video URL'
 						value={youtubeUrl}
 						onChange={e => setYoutubeUrl(e.target.value)}
+						disabled={isLoading}
 						className='flex-1 text-lg py-6'
 					/>
-					<Select value={filler} onValueChange={setFiller}>
+					<Select value={filler} onValueChange={setFiller} disabled={isLoading}>
 						<SelectTrigger className='w-full md:w-[200px]'>
 							<SelectValue placeholder='Select filler' />
 						</SelectTrigger>
@@ -71,13 +113,30 @@ export function VideoConverter() {
 							))}
 						</SelectContent>
 					</Select>
+					<Select
+						value={numberOfClips}
+						onValueChange={setNumberOfClips}
+						disabled={isLoading}
+					>
+						<SelectTrigger className='w-full md:w-[120px]'>
+							<SelectValue placeholder='Clips' />
+						</SelectTrigger>
+						<SelectContent>
+							{CLIP_OPTIONS.map((option, index) => (
+								<SelectItem key={index} value={option.value}>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 					<Button
 						size='lg'
 						onClick={handleConvert}
+						disabled={isLoading}
 						className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
 					>
-						Get Clips
-						<ArrowRight className='ml-2 h-5 w-5' />
+						{isLoading ? 'Processing...' : 'Get Clips'}
+						{!isLoading && <ArrowRight className='ml-2 h-5 w-5' />}
 					</Button>
 				</div>
 			</div>

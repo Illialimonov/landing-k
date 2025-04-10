@@ -3,62 +3,64 @@
 import { useState } from 'react'
 import $api from '@/lib/http'
 
+const PLANS = [
+	{
+		name: 'Starter',
+		price: '$0',
+		period: '/month',
+		description: 'Get started with basic TikTok clip creation',
+		benefits: [
+			'1 YouTube video per month',
+			'Up to 2 TikTok clips per video',
+			'Basic AI highlight detection',
+			'Standard video quality (720p)',
+			'Community support',
+		],
+		buttonText: 'Get Started',
+		endpoint: null,
+	},
+	{
+		name: 'Creator',
+		price: '$19',
+		period: '/month',
+		description: 'Perfect for individual content creators',
+		benefits: [
+			'Up to 10 YouTube videos per month',
+			'Up to 5 TikTok clips per video',
+			'Advanced AI optimization',
+			'HD video quality (1080p)',
+			'Email support',
+		],
+		buttonText: 'Get Started',
+		endpoint: '/pro-link',
+	},
+	{
+		name: 'Viral Pro',
+		price: '$29',
+		period: '/month',
+		description: 'Go viral with unlimited power',
+		benefits: [
+			'Unlimited YouTube videos',
+			'Unlimited TikTok clips',
+			'Premium AI analysis & trends',
+			'4K video quality',
+			'Priority support 24/7',
+		],
+		buttonText: 'Get Started',
+		endpoint: '/premium-link',
+	},
+]
+
 export default function PricingPage() {
 	const [loading, setLoading] = useState<string | null>(null)
 
-	const plans = [
-		{
-			name: 'Starter',
-			price: '$0',
-			period: '/month',
-			description: 'Get started with basic TikTok clip creation',
-			benefits: [
-				'1 YouTube video per month',
-				'Up to 2 TikTok clips per video',
-				'Basic AI highlight detection',
-				'Standard video quality (720p)',
-				'Community support',
-			],
-			buttonText: 'Get Started',
-			planId: 'starter',
-		},
-		{
-			name: 'Creator',
-			price: '$15',
-			period: '/month',
-			description: 'Perfect for individual content creators',
-			benefits: [
-				'Up to 10 YouTube videos per month',
-				'Up to 5 TikTok clips per video',
-				'Advanced AI optimization',
-				'HD video quality (1080p)',
-				'Email support',
-			],
-			buttonText: 'Get Started',
-			planId: 'creator',
-		},
-		{
-			name: 'Viral Pro',
-			price: '$49',
-			period: '/month',
-			description: 'Go viral with unlimited power',
-			benefits: [
-				'Unlimited YouTube videos',
-				'Unlimited TikTok clips',
-				'Premium AI analysis & trends',
-				'4K video quality',
-				'Priority support 24/7',
-			],
-			buttonText: 'Get Started',
-			planId: 'viral-pro',
-		},
-	]
+	const handlePayment = async (endpoint: string | null) => {
+		if (!endpoint) return
 
-	const handlePayment = async (plan: string) => {
-		setLoading(plan)
+		setLoading(endpoint)
 		try {
-			const response = await $api.post('/stripe/checkout', { plan })
-			const { url } = response.data
+			const res = await $api.get(endpoint)
+			const url = res.data
 			if (url) {
 				window.location.href = url
 			} else {
@@ -88,7 +90,7 @@ export default function PricingPage() {
 				</p>
 
 				<div className='grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto'>
-					{plans.map(plan => (
+					{PLANS.map(plan => (
 						<div
 							key={plan.name}
 							className='group relative bg-secondary/50 rounded-xl p-6 backdrop-blur-sm border border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:scale-105'
@@ -118,11 +120,11 @@ export default function PricingPage() {
 									</ul>
 								</div>
 								<button
-									onClick={() => handlePayment(plan.planId)}
-									disabled={loading === plan.planId}
+									onClick={() => handlePayment(plan.endpoint)}
+									disabled={!plan.endpoint || loading === plan.endpoint}
 									className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition disabled:opacity-50'
 								>
-									{loading === plan.planId ? 'Processing...' : plan.buttonText}
+									{plan.buttonText}
 								</button>
 							</div>
 						</div>
