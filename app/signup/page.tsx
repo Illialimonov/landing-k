@@ -10,12 +10,17 @@ import { useAuth } from '@/contexts/AuthContext'
 export default function Register() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
+	const [repeatedPassword, setRepeatedPassword] = useState('')
 	const [error, setError] = useState('')
 	const router = useRouter()
 	const { login } = useAuth()
 
 	const handleRegister = async (e: React.FormEvent) => {
 		e.preventDefault()
+		if (password !== repeatedPassword) {
+			setError('Passwords do not match')
+			return
+		}
 		try {
 			console.log('Sending registration request:', { email, password })
 			const res = await $api.post('/user/register', {
@@ -38,6 +43,7 @@ export default function Register() {
 				'Sending Google registration request:',
 				credentialResponse.credential
 			)
+			console.log('Google OAuth credentials:', credentialResponse)
 			const res = await $api.post('/user/google', {
 				credentials: credentialResponse.credential,
 			})
@@ -47,7 +53,7 @@ export default function Register() {
 				await login(access_token, refresh_token, googleEmail)
 				router.push('/')
 			} else {
-				router.push('/login') // Если токены не пришли, считаем, что регистрация прошла, но нужен логин
+				router.push('/login')
 			}
 		} catch (err: any) {
 			console.error(
@@ -100,6 +106,22 @@ export default function Register() {
 								id='password'
 								value={password}
 								onChange={e => setPassword(e.target.value)}
+								className='w-full p-3 rounded-lg bg-background border border-muted-foreground/20 text-white focus:outline-none focus:ring-2 focus:ring-primary'
+								required
+							/>
+						</div>
+						<div>
+							<label
+								className='block text-muted-foreground mb-2'
+								htmlFor='repeatedPassword'
+							>
+								Repeat Password
+							</label>
+							<input
+								type='password'
+								id='repeatedPassword'
+								value={repeatedPassword}
+								onChange={e => setRepeatedPassword(e.target.value)}
 								className='w-full p-3 rounded-lg bg-background border border-muted-foreground/20 text-white focus:outline-none focus:ring-2 focus:ring-primary'
 								required
 							/>

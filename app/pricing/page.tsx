@@ -5,46 +5,101 @@ import $api from '@/lib/http'
 
 const PLANS = [
 	{
-		name: 'Starter',
+		name: 'Starter - Free',
 		price: '$0',
 		period: '/month',
-		description: 'Get started with basic TikTok clip creation',
-		benefits: [
-			'1 YouTube video per month',
-			'Up to 2 TikTok clips per video',
-			'Basic AI highlight detection',
-			'Standard video quality (720p)',
-			'Community support',
+		description: 'Try the core features with no commitment.',
+		includes: [
+			{
+				title: '🎬 1 Free Clip Conversion',
+				description: ' - Experience the workflow with no strings attached',
+			},
+			{
+				title: '📹 480p Export Quality',
+				description: ' - Fast, lightweight previews perfect for testing',
+			},
+			{
+				title: '🎮 Access to 1 Gameplay Template',
+				description: ' - Try out our viral gameplay overlay',
+			},
+			{
+				title: '🔥 AI-Generated Hashtags',
+				description: ' - Get optimized tags to boost your first post',
+			},
 		],
+		attractiveInfo:
+			'🚀 Ready to go unlimited? Upgrade to Pro or Premium anytime.',
 		buttonText: 'Get Started',
 		endpoint: null,
 	},
 	{
-		name: 'Creator',
+		name: 'Pro',
 		price: '$19',
 		period: '/month',
-		description: 'Perfect for individual content creators',
-		benefits: [
-			'Up to 10 YouTube videos per month',
-			'Up to 5 TikTok clips per video',
-			'Advanced AI optimization',
-			'HD video quality (1080p)',
-			'Email support',
+		description:
+			'For solo creators looking to automate and grow their short-form content.',
+		includes: [
+			{
+				title: '✂️ Advanced AI Smart Splitting',
+				description: ' - Better scene detection for higher-impact clips',
+			},
+			{
+				title: '📺 Up to 5 Clips Per Session',
+				description: ' - Speed up your workflow with batch processing',
+			},
+			{
+				title: '🎮 Access to 10 Gameplay Templates',
+				description: ' - More variety to match your niche or audience',
+			},
+			{
+				title: '📹 1080p Max Export Resolution',
+				description: ' - High-definition clips for a professional look',
+			},
+			{
+				title: '📏 Supports YouTube Videos up to 30 Minutes Long',
+			},
+			{
+				title: '🔥 Auto-Generated Hashtags for Virality',
+				description: ' - Smarter tags based on video context and trends',
+			},
 		],
 		buttonText: 'Get Started',
 		endpoint: '/pro-link',
 	},
 	{
-		name: 'Viral Pro',
+		name: 'Premium',
 		price: '$29',
 		period: '/month',
-		description: 'Go viral with unlimited power',
-		benefits: [
-			'Unlimited YouTube videos',
-			'Unlimited TikTok clips',
-			'Premium AI analysis & trends',
-			'4K video quality',
-			'Priority support 24/7',
+		description:
+			'For power users and agencies who want full creative control and maximum output. \n\nEverything in Pro, plus:',
+		includes: [
+			{
+				title: '🎬 Unlimited Clip Generation',
+				description: ' - Create as many clips as you want, no monthly limits',
+			},
+			{
+				title: '✂️ Basic AI Smart Splitting',
+				description: ' - Automatically detects key moments to clip',
+			},
+			{
+				title: '📺 Up to 3 Clips Per Session',
+				description: ' - Generate multiple clips at once',
+			},
+			{
+				title: '🎮 Access to 5 Gameplay Templates',
+				description: ' - Choose from viral-ready gameplay overlays',
+			},
+			{
+				title: '📹 720p Max Export Resolution',
+				description: ' - Optimized for TikTok and Reels',
+			},
+			{
+				title: '📏 Supports YouTube Videos up to 15 Minutes Long',
+			},
+			{
+				title: '🔥 Auto-Generated Hashtags',
+				description: ' - Boost your reach with trending, tailored tags',
+			},
 		],
 		buttonText: 'Get Started',
 		endpoint: '/premium-link',
@@ -89,7 +144,7 @@ export default function PricingPage() {
 					your reach soar.
 				</p>
 
-				<div className='grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto'>
+				<div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1440px] mx-auto'>
 					{PLANS.map(plan => (
 						<div
 							key={plan.name}
@@ -97,27 +152,38 @@ export default function PricingPage() {
 						>
 							<div className='absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity' />
 							<div className='relative flex flex-col justify-between h-full'>
-								<h2 className='text-2xl font-semibold text-white mb-2'>
-									{plan.name}
-								</h2>
-								<p className='text-muted-foreground mb-2'>{plan.description}</p>
 								<div>
+									<h2 className='text-2xl font-semibold text-white mb-2'>
+										{plan.name}
+									</h2>
+									<p className='text-muted-foreground mb-2'>
+										{plan.description}
+									</p>
+								</div>
+
+								<div className='max-lg:mb-4'>
 									<div className='text-3xl font-bold text-white mb-4'>
 										{plan.price}
 										<span className='text-lg font-normal text-muted-foreground'>
 											{plan.period}
 										</span>
 									</div>
-									<ul className='space-y-2 mb-6'>
-										{plan.benefits.map(benefit => (
+									<ul className='space-y-4 mb-6'>
+										{plan.includes.map(item => (
 											<li
-												key={benefit}
-												className='text-muted-foreground flex items-center'
+												key={item.title}
+												className='text-muted-foreground flex items-center justify-start'
 											>
-												<span className='text-primary mr-2'>✓</span> {benefit}
+												<p className='font-normal'>
+													<span className='font-bold'>{item.title}</span>
+													{item.description}
+												</p>
 											</li>
 										))}
 									</ul>
+									{plan.attractiveInfo && (
+										<p className='font-semibold'>{plan.attractiveInfo}</p>
+									)}
 								</div>
 								<button
 									onClick={() => handlePayment(plan.endpoint)}
