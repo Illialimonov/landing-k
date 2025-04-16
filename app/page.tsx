@@ -64,7 +64,7 @@ export default function Home() {
 
 						<div className='relative'>
 							<VideoConverter />
-							<div className='absolute -bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-lg'>
+							<div className='mt-4 text-center'>
 								<p className='text-sm text-muted-foreground'>
 									No credit card required • Free plan available
 								</p>
