@@ -18,7 +18,6 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
-import { Progress } from '@/components/ui/progress'
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
@@ -27,6 +26,7 @@ import { Clip } from '@/types'
 import { ClipResults } from './clip-results'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { CustomProgress } from './custom-progress'
 
 const FILLER_OPTIONS = [
 	{ value: 'gta5', label: 'GTA 5', icon: '/icons/gta-5.png' },
@@ -194,7 +194,7 @@ export function VideoConverter() {
 							{estimatedTime}
 						</DialogDescription>
 					</DialogHeader>
-					<Progress value={progress} className='w-full' />
+					<CustomProgress value={progress} className='w-full' />
 				</DialogContent>
 			</Dialog>
 

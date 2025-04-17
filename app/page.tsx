@@ -1,8 +1,7 @@
 import { VideoConverter } from '@/components/video-converter'
 import { Features } from '@/components/features'
 import { Testimonials } from '@/components/testimonials'
-import { Button } from '@/components/ui/button'
-import { ArrowRight, Wand2, Type, Brain, Sparkles } from 'lucide-react'
+import { ArrowRight, Brain, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import VideoCarousel from '@/components/video-carousel'
 
@@ -174,9 +173,10 @@ export default function Home() {
 						<div className='relative'>
 							<div className='absolute inset-0 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl' />
 							<div className='relative bg-secondary/50 rounded-2xl p-8 aspect-square flex items-center justify-center'>
-								<img
+								<Image
 									src='https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=800&fit=crop'
 									alt='AI Analysis Visualization'
+									fill
 									className='rounded-xl'
 								/>
 							</div>
@@ -187,63 +187,6 @@ export default function Home() {
 
 			{/* video carousel */}
 			<VideoCarousel />
-
-			{/* Auto Captions
-			<section className='py-32 bg-secondary/50 relative overflow-hidden'>
-				<div className='container mx-auto px-4'>
-					<div className='grid grid-cols-1 lg:grid-cols-2 gap-20 items-center'>
-						<div className='order-2 lg:order-1 relative'>
-							<div className='absolute inset-0 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl' />
-							<div className='relative bg-background rounded-2xl p-8 aspect-square flex items-center justify-center'>
-								<img
-									src='https://images.unsplash.com/photo-1600697394936-59934aa5951f?w=800&h=800&fit=crop'
-									alt='Auto Captions Demo'
-									className='rounded-xl'
-								/>
-							</div>
-						</div>
-						<div className='order-1 lg:order-2'>
-							<h2 className='text-4xl md:text-5xl font-bold gradient-text mb-6'>
-								Auto Captions & Translations
-							</h2>
-							<p className='text-xl text-muted-foreground mb-8'>
-								Maximize your reach with automatically generated captions and
-								translations, making your content accessible to a global
-								audience.
-							</p>
-							<div className='space-y-6'>
-								<div className='flex items-start gap-4'>
-									<div className='p-2 rounded-lg bg-primary/10'>
-										<Type className='h-6 w-6 text-primary' />
-									</div>
-									<div>
-										<h3 className='font-semibold mb-2'>
-											Accurate Transcription
-										</h3>
-										<p className='text-muted-foreground'>
-											AI-powered speech recognition for precise captions
-										</p>
-									</div>
-								</div>
-								<div className='flex items-start gap-4'>
-									<div className='p-2 rounded-lg bg-primary/10'>
-										<Wand2 className='h-6 w-6 text-primary' />
-									</div>
-									<div>
-										<h3 className='font-semibold mb-2'>
-											Multi-Language Support
-										</h3>
-										<p className='text-muted-foreground'>
-											Translate your content into multiple languages
-											automatically
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section> */}
 
 			<Features />
 			<Testimonials />
