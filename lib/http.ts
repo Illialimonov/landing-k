@@ -1,10 +1,7 @@
 import axios from 'axios'
 
-export const API_URL =
-	process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
-
 const $api = axios.create({
-	baseURL: API_URL,
+	baseURL: process.env.NEXT_PUBLIC_API_URL,
 	headers: {
 		'Content-Type': 'application/json',
 	},
@@ -22,36 +19,44 @@ $api.interceptors.request.use(
 )
 
 $api.interceptors.response.use(
-	response => response,
+	response => {
+		if (response.data?.access_token && response.data?.user_details) {
+			const { access_token, refresh_token, user_details } = response.data
+			const tier = user_details?.tier || 'FREE'
+			localStorage.setItem('accessToken', access_token)
+			localStorage.setItem('refreshToken', refresh_token)
+			localStorage.setItem('tier', tier)
+		}
+		return response
+	},
 	async error => {
 		const originalRequest = error.config
-		if (error.response?.status === 401 && !originalRequest._retry) {
+		if (
+			error.response?.status === 401 &&
+			!originalRequest._retry &&
+			error.config.url !== '/user/login'
+		) {
 			originalRequest._retry = true
 			try {
 				const refreshToken = localStorage.getItem('refreshToken')
-				if (!refreshToken) {
-					console.error('No refresh token found in localStorage')
-					throw new Error('No refresh token available')
-				}
-				console.log('Attempting to refresh token with:', refreshToken)
-
-				const response = await axios.post(`${API_URL}/user/refresh-token`, {
-					token: refreshToken,
-				})
-
-				const { access_token, refresh_token } = response.data
-				console.log('New access token received:', access_token)
+				const response = await axios.post(
+					`${process.env.NEXT_PUBLIC_API_URL}/user/refresh-token`,
+					{ token: refreshToken }
+				)
+				const { access_token, refresh_token, user_details } = response.data
+				const tier = user_details?.tier || 'FREE'
 				localStorage.setItem('accessToken', access_token)
 				localStorage.setItem('refreshToken', refresh_token)
-
+				localStorage.setItem('tier', tier)
 				originalRequest.headers.Authorization = `Bearer ${access_token}`
 				return $api(originalRequest)
 			} catch (refreshError) {
-				console.error('Token refresh failed:', refreshError)
+				// Если обновление токена не удалось, выполняем logout
 				localStorage.removeItem('accessToken')
 				localStorage.removeItem('refreshToken')
+				localStorage.removeItem('userEmail')
+				localStorage.removeItem('tier')
 				window.location.href = '/login'
-				return Promise.reject(refreshError)
 			}
 		}
 		return Promise.reject(error)

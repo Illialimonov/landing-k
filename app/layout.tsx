@@ -37,6 +37,9 @@ export const metadata: Metadata = {
 	title: 'ViralCuts - AI-Powered Video Content Creation',
 	description:
 		'Transform your YouTube videos into viral TikTok content automatically',
+	icons: {
+		icon: '/favicon.jpg',
+	},
 }
 
 export default function RootLayout({

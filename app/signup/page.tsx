@@ -6,12 +6,14 @@ import { useState } from 'react'
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
 import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '@/contexts/AuthContext'
+import { Loader2 } from 'lucide-react'
 
 export default function Register() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [repeatedPassword, setRepeatedPassword] = useState('')
 	const [error, setError] = useState('')
+	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const router = useRouter()
 	const { login } = useAuth()
 
@@ -21,17 +23,21 @@ export default function Register() {
 			setError('Passwords do not match')
 			return
 		}
+		setIsLoading(true)
 		try {
 			console.log('Sending registration request:', { email, password })
 			const res = await $api.post('/user/register', {
 				email,
 				password,
+				repeatedPassword,
 			})
 			console.log('Registration response:', res.data)
 			router.push('/login')
 		} catch (err: any) {
 			console.error('Registration error:', err.response?.data || err.message)
 			setError(err.response?.data?.message || 'Registration error')
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
@@ -48,9 +54,10 @@ export default function Register() {
 				credentials: credentialResponse.credential,
 			})
 			console.log('Google registration response:', res.data)
-			const { access_token, refresh_token } = res.data || {}
+			const { access_token, refresh_token, user_details } = res.data || {}
+			const tier = user_details?.tier || 'FREE'
 			if (access_token && refresh_token) {
-				await login(access_token, refresh_token, googleEmail)
+				await login(access_token, refresh_token, googleEmail, tier)
 				router.push('/')
 			} else {
 				router.push('/login')
@@ -128,9 +135,16 @@ export default function Register() {
 						</div>
 						<button
 							type='submit'
-							className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition'
+							className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition flex items-center justify-center'
 						>
-							Sign up
+							{isLoading ? (
+								<>
+									<Loader2 className='mr-2 h-5 w-5 animate-spin' />
+									Signin up...
+								</>
+							) : (
+								'Sign up'
+							)}
 						</button>
 					</form>
 

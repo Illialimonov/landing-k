@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,12 +10,23 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog'
+import { Slider } from '@/components/ui/slider'
+import { Progress } from '@/components/ui/progress'
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 import $api from '@/lib/http'
 import { Clip } from '@/types'
 import { ClipResults } from './clip-results'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 
 const FILLER_OPTIONS = [
 	{ value: 'gta5', label: 'GTA 5', icon: '/icons/gta-5.png' },
@@ -34,21 +45,43 @@ const FILLER_OPTIONS = [
 	{ value: 'random', label: 'Random', icon: '/icons/random.png' },
 ]
 
-const CLIP_OPTIONS = [
-	{ value: '1', label: '1 Clip' },
-	{ value: '3', label: '3 Clips' },
-	{ value: '5', label: '5 Clips' },
-]
-
 export function VideoConverter() {
 	const [youtubeUrl, setYoutubeUrl] = useState('')
 	const [filler, setFiller] = useState('random')
-	const [numberOfClips, setNumberOfClips] = useState('3')
+	const [numberOfClips, setNumberOfClips] = useState(3)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const [clips, setClips] = useState<Clip[]>([])
+	const [progress, setProgress] = useState(0)
+	const [estimatedTime, setEstimatedTime] = useState('')
 	const { toast } = useToast()
+	const router = useRouter()
+	const { isAuthenticated } = useAuth()
+
+	// Расчёт примерного времени ожидания
+	useEffect(() => {
+		if (isLoading) {
+			const minTime = numberOfClips * 60 // 1 минута на клип
+			const maxTime = numberOfClips * 120 // 2 минуты на клип
+			setEstimatedTime(`~${minTime}–${maxTime} seconds`)
+
+			// Симуляция прогресса
+			const interval = setInterval(() => {
+				setProgress(prev => {
+					if (prev >= 90) return prev
+					return prev + 100 / (minTime * 2)
+				})
+			}, 1000)
+
+			return () => clearInterval(interval)
+		}
+	}, [isLoading, numberOfClips])
 
 	const handleConvert = async () => {
+		if (!isAuthenticated) {
+			router.push('/login')
+			return
+		}
+
 		if (!youtubeUrl.trim()) {
 			toast({
 				variant: 'destructive',
@@ -59,14 +92,16 @@ export function VideoConverter() {
 		}
 
 		setIsLoading(true)
+		setProgress(0)
 		try {
 			const response = await $api.post('/create', {
 				youtubeURL: youtubeUrl,
 				filler,
-				numberOfClips: parseInt(numberOfClips),
+				numberOfClips,
 			})
 			console.log('Conversion response:', response.data)
 			setClips(response.data)
+			setProgress(100)
 			toast({
 				title: 'Success',
 				description: 'Clips have been generated successfully!',
@@ -122,22 +157,20 @@ export function VideoConverter() {
 								))}
 							</SelectContent>
 						</Select>
-						<Select
-							value={numberOfClips}
-							onValueChange={setNumberOfClips}
-							disabled={isLoading}
-						>
-							<SelectTrigger className='w-full md:w-[120px]'>
-								<SelectValue placeholder='Clips' />
-							</SelectTrigger>
-							<SelectContent>
-								{CLIP_OPTIONS.map((option, index) => (
-									<SelectItem key={index} value={option.value}>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<div className='w-full md:w-[120px] flex flex-col gap-2'>
+							<label className='text-sm text-muted-foreground'>
+								Number of Clips: {numberOfClips}
+							</label>
+							<Slider
+								value={[numberOfClips]}
+								onValueChange={value => setNumberOfClips(value[0])}
+								min={1}
+								max={5}
+								step={1}
+								disabled={isLoading}
+								className='w-full'
+							/>
+						</div>
 						<Button
 							size='lg'
 							onClick={handleConvert}
@@ -150,6 +183,21 @@ export function VideoConverter() {
 					</div>
 				</div>
 			</div>
+
+			{/* Модальное окно загрузки */}
+			<Dialog open={isLoading}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Generating Clips</DialogTitle>
+						<DialogDescription>
+							Please wait while we process your video. Estimated time:{' '}
+							{estimatedTime}
+						</DialogDescription>
+					</DialogHeader>
+					<Progress value={progress} className='w-full' />
+				</DialogContent>
+			</Dialog>
+
 			<ClipResults clips={clips} />
 		</div>
 	)

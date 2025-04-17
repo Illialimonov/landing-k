@@ -5,35 +5,55 @@ import { useEffect, useState } from 'react'
 import { Loader } from './ui/loader'
 
 const VIDEOS = [
-	'https://storage.googleapis.com/tiktok1234/Xz_Npj-bZEyh_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/zKUpqBIrWjIG_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/Z-53TiGosrqg_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/3ydJFIYah087_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/jnL6VhENkjMR_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/CWjhcGw2nRRf_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/jDEYMjRpPBdd_1.mp4',
-	'https://storage.googleapis.com/tiktok1234/04yKmfS2XNLV_1.mp4',
+	'https://storage.googleapis.com/tiktok1234/hI2fRz90j7GE.mp4',
+	'https://storage.googleapis.com/tiktok1234/MZnM1cvk5a2_.mp4',
+	'https://storage.googleapis.com/tiktok1234/NVLC54K_oipf.mp4',
+	'https://storage.googleapis.com/tiktok1234/aJc-lm1k5T2P.mp4',
+	'https://storage.googleapis.com/tiktok1234/co_BWF2tZoky.mp4',
+	'https://storage.googleapis.com/tiktok1234/C3VsKF6leEtZ.mp4',
+	'https://storage.googleapis.com/tiktok1234/u5pBSLCFHFUW.mp4',
+	'https://storage.googleapis.com/tiktok1234/Ko1SEcwQ9rTS.mp4',
 ]
 
 export default function VideoCarousel() {
 	const [loadedVideos, setLoadedVideos] = useState<boolean[]>(
 		new Array(VIDEOS.length).fill(false)
 	)
+	const [errorVideos, setErrorVideos] = useState<boolean[]>(
+		new Array(VIDEOS.length).fill(false)
+	)
+
+	const handleVideoLoaded = (index: number) => {
+		setLoadedVideos(prev => {
+			const newLoaded = [...prev]
+			newLoaded[index] = true
+			return newLoaded
+		})
+	}
+
+	const handleVideoError = (index: number) => {
+		setErrorVideos(prev => {
+			const newErrors = [...prev]
+			newErrors[index] = true
+			return newErrors
+		})
+		setLoadedVideos(prev => {
+			const newLoaded = [...prev]
+			newLoaded[index] = true // Скрываем лоадер, чтобы показать ошибку
+			return newLoaded
+		})
+	}
 
 	useEffect(() => {
-		const timers = VIDEOS.map((_, index) => {
-			return setTimeout(() => {
-				setLoadedVideos(prev => {
-					const newLoaded = [...prev]
-					newLoaded[index] = true
-					return newLoaded
-				})
-			}, index * 500)
+		// Предварительная проверка доступности видео (опционально)
+		VIDEOS.forEach((src, index) => {
+			const video = document.createElement('video')
+			video.src = src
+			video.preload = 'metadata'
+			video.onloadeddata = () => handleVideoLoaded(index)
+			video.onerror = () => handleVideoError(index)
+			video.load()
 		})
-
-		return () => {
-			timers.forEach(timer => clearTimeout(timer))
-		}
 	}, [])
 
 	return (
@@ -51,11 +71,20 @@ export default function VideoCarousel() {
 						>
 							<div className='w-full h-full'>
 								{loadedVideos[index] ? (
-									<video
-										src={src}
-										controls
-										className='absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 ease-in-out'
-									/>
+									errorVideos[index] ? (
+										<div className='absolute top-0 left-0 w-full h-full flex items-center justify-center bg-red-500/30 text-white text-sm p-4'>
+											Failed to load video. Please try again later.
+										</div>
+									) : (
+										<video
+											src={src}
+											controls
+											preload='metadata'
+											className='absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 ease-in-out'
+											onLoadedData={() => handleVideoLoaded(index)}
+											onError={() => handleVideoError(index)}
+										/>
+									)
 								) : (
 									<Loader />
 								)}

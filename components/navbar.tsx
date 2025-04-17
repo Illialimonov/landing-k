@@ -6,7 +6,10 @@ import { Scissors } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function Navbar() {
-	const { isAuthenticated, userEmail, logout } = useAuth()
+	const { isAuthenticated, tier, logout } = useAuth()
+
+	const formattedTier =
+		tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()
 
 	return (
 		<nav className='fixed top-0 w-full z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
@@ -33,7 +36,7 @@ export function Navbar() {
 					{isAuthenticated ? (
 						<>
 							<span className='text-sm font-medium text-muted-foreground'>
-								Hello, {userEmail}
+								Current plan: {formattedTier}
 							</span>
 							<Button variant='ghost' size='sm' onClick={logout}>
 								Logout

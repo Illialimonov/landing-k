@@ -40,40 +40,6 @@ const PLANS = [
 			'For solo creators looking to automate and grow their short-form content.',
 		includes: [
 			{
-				title: '✂️ Advanced AI Smart Splitting',
-				description: ' - Better scene detection for higher-impact clips',
-			},
-			{
-				title: '📺 Up to 5 Clips Per Session',
-				description: ' - Speed up your workflow with batch processing',
-			},
-			{
-				title: '🎮 Access to 10 Gameplay Templates',
-				description: ' - More variety to match your niche or audience',
-			},
-			{
-				title: '📹 1080p Max Export Resolution',
-				description: ' - High-definition clips for a professional look',
-			},
-			{
-				title: '📏 Supports YouTube Videos up to 30 Minutes Long',
-			},
-			{
-				title: '🔥 Auto-Generated Hashtags for Virality',
-				description: ' - Smarter tags based on video context and trends',
-			},
-		],
-		buttonText: 'Get Started',
-		endpoint: '/pro-link',
-	},
-	{
-		name: 'Premium',
-		price: '$29',
-		period: '/month',
-		description:
-			'For power users and agencies who want full creative control and maximum output. \n\nEverything in Pro, plus:',
-		includes: [
-			{
 				title: '🎬 Unlimited Clip Generation',
 				description: ' - Create as many clips as you want, no monthly limits',
 			},
@@ -99,6 +65,40 @@ const PLANS = [
 			{
 				title: '🔥 Auto-Generated Hashtags',
 				description: ' - Boost your reach with trending, tailored tags',
+			},
+		],
+		buttonText: 'Get Started',
+		endpoint: '/pro-link',
+	},
+	{
+		name: 'Premium',
+		price: '$29',
+		period: '/month',
+		description:
+			'For power users and agencies who want full creative control and maximum output. \n\nEverything in Pro, plus:',
+		includes: [
+			{
+				title: '✂️ Advanced AI Smart Splitting',
+				description: ' - Better scene detection for higher-impact clips',
+			},
+			{
+				title: '📺 Up to 5 Clips Per Session',
+				description: ' - Speed up your workflow with batch processing',
+			},
+			{
+				title: '🎮 Access to 10 Gameplay Templates',
+				description: ' - More variety to match your niche or audience',
+			},
+			{
+				title: '📹 1080p Max Export Resolution',
+				description: ' - High-definition clips for a professional look',
+			},
+			{
+				title: '📏 Supports YouTube Videos up to 30 Minutes Long',
+			},
+			{
+				title: '🔥 Auto-Generated Hashtags for Virality',
+				description: ' - Smarter tags based on video context and trends',
 			},
 		],
 		buttonText: 'Get Started',
