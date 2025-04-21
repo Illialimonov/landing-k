@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import $api from '@/lib/http'
+import { useAuth } from '@/contexts/AuthContext'
 
 const PLANS = [
 	{
 		name: 'Starter - Free',
+		tier: 'FREE',
 		price: '$0',
 		period: '/month',
 		description: 'Try the core features with no commitment.',
@@ -34,6 +36,7 @@ const PLANS = [
 	},
 	{
 		name: 'Pro',
+		tier: 'PRO',
 		price: '$19',
 		period: '/month',
 		description:
@@ -72,6 +75,7 @@ const PLANS = [
 	},
 	{
 		name: 'Premium',
+		tier: 'PREMIUM',
 		price: '$29',
 		period: '/month',
 		description:
@@ -108,6 +112,7 @@ const PLANS = [
 
 export default function PricingPage() {
 	const [loading, setLoading] = useState<string | null>(null)
+	const { tier } = useAuth()
 
 	const handlePayment = async (endpoint: string | null) => {
 		if (!endpoint) return
@@ -145,56 +150,63 @@ export default function PricingPage() {
 				</p>
 
 				<div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1440px] mx-auto'>
-					{PLANS.map(plan => (
-						<div
-							key={plan.name}
-							className='group relative bg-secondary/50 rounded-xl p-6 backdrop-blur-sm border border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:scale-105'
-						>
-							<div className='absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity' />
-							<div className='relative flex flex-col justify-between h-full'>
-								<div>
-									<h2 className='text-2xl font-semibold text-white mb-2'>
-										{plan.name}
-									</h2>
-									<p className='text-muted-foreground mb-2'>
-										{plan.description}
-									</p>
-								</div>
-
-								<div className='max-lg:mb-4'>
-									<div className='text-3xl font-bold text-white mb-4'>
-										{plan.price}
-										<span className='text-lg font-normal text-muted-foreground'>
-											{plan.period}
-										</span>
+					{PLANS.map(plan => {
+						const isCurrentPlan = plan.tier === tier
+						return (
+							<div
+								key={plan.name}
+								className='group relative bg-secondary/50 rounded-xl p-6 backdrop-blur-sm border border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:scale-105'
+							>
+								<div className='absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity' />
+								<div className='relative flex flex-col justify-between h-full'>
+									<div>
+										<h2 className='text-2xl font-semibold text-white mb-2'>
+											{plan.name}
+										</h2>
+										<p className='text-muted-foreground mb-2'>
+											{plan.description}
+										</p>
 									</div>
-									<ul className='space-y-4 mb-6'>
-										{plan.includes.map(item => (
-											<li
-												key={item.title}
-												className='text-muted-foreground flex items-center justify-start'
-											>
-												<p className='font-normal'>
-													<span className='font-bold'>{item.title}</span>
-													{item.description}
-												</p>
-											</li>
-										))}
-									</ul>
-									{plan.attractiveInfo && (
-										<p className='font-semibold'>{plan.attractiveInfo}</p>
-									)}
+
+									<div className='max-lg:mb-4'>
+										<div className='text-3xl font-bold text-white mb-4'>
+											{plan.price}
+											<span className='text-lg font-normal text-muted-foreground'>
+												{plan.period}
+											</span>
+										</div>
+										<ul className='space-y-4 mb-6'>
+											{plan.includes.map(item => (
+												<li
+													key={item.title}
+													className='text-muted-foreground flex items-center justify-start'
+												>
+													<p className='font-normal'>
+														<span className='font-bold'>{item.title}</span>
+														{item.description}
+													</p>
+												</li>
+											))}
+										</ul>
+										{plan.attractiveInfo && (
+											<p className='font-semibold'>{plan.attractiveInfo}</p>
+										)}
+									</div>
+									<button
+										onClick={() => handlePayment(plan.endpoint)}
+										disabled={
+											!plan.endpoint ||
+											loading === plan.endpoint ||
+											isCurrentPlan
+										}
+										className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition disabled:opacity-50'
+									>
+										{isCurrentPlan ? 'Current Plan' : plan.buttonText}
+									</button>
 								</div>
-								<button
-									onClick={() => handlePayment(plan.endpoint)}
-									disabled={!plan.endpoint || loading === plan.endpoint}
-									className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition disabled:opacity-50'
-								>
-									{plan.buttonText}
-								</button>
 							</div>
-						</div>
-					))}
+						)
+					})}
 				</div>
 			</div>
 		</section>

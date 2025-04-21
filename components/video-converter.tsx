@@ -55,7 +55,7 @@ export function VideoConverter() {
 	const [estimatedTime, setEstimatedTime] = useState('')
 	const { toast } = useToast()
 	const router = useRouter()
-	const { isAuthenticated } = useAuth()
+	const { isAuthenticated, tier, hasOneFreeConversion } = useAuth()
 
 	// Расчёт примерного времени ожидания
 	useEffect(() => {
@@ -76,9 +76,16 @@ export function VideoConverter() {
 		}
 	}, [isLoading, numberOfClips])
 
+	const isFreeUserRestricted = tier === 'FREE' && hasOneFreeConversion
+
 	const handleConvert = async () => {
 		if (!isAuthenticated) {
 			router.push('/login')
+			return
+		}
+
+		if (isFreeUserRestricted) {
+			router.push('/pricing')
 			return
 		}
 
@@ -130,13 +137,13 @@ export function VideoConverter() {
 							placeholder='Paste YouTube video URL'
 							value={youtubeUrl}
 							onChange={e => setYoutubeUrl(e.target.value)}
-							disabled={isLoading}
+							disabled={isLoading || isFreeUserRestricted}
 							className='flex-1 text-lg py-6'
 						/>
 						<Select
 							value={filler}
 							onValueChange={setFiller}
-							disabled={isLoading}
+							disabled={isLoading || isFreeUserRestricted}
 						>
 							<SelectTrigger className='w-full md:w-[200px]'>
 								<SelectValue placeholder='Select filler' />
@@ -167,7 +174,7 @@ export function VideoConverter() {
 								min={1}
 								max={5}
 								step={1}
-								disabled={isLoading}
+								disabled={isLoading || isFreeUserRestricted}
 								className='w-full'
 							/>
 						</div>
@@ -177,12 +184,29 @@ export function VideoConverter() {
 							disabled={isLoading}
 							className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
 						>
-							{isLoading ? 'Processing...' : 'Get Clips'}
-							{!isLoading && <ArrowRight className='ml-2 h-5 w-5' />}
+							{isFreeUserRestricted
+								? 'Choose a Plan'
+								: isLoading
+								? 'Processing...'
+								: 'Get Clips'}
+							{!isLoading && !isFreeUserRestricted && (
+								<ArrowRight className='ml-2 h-5 w-5' />
+							)}
 						</Button>
 					</div>
 				</div>
 			</div>
+
+			{isFreeUserRestricted && (
+				<p className='text-center text-muted-foreground mt-4 max-w-3xl mx-auto'>
+					You`ve used your free conversion. Unlock more features by selecting a
+					plan in Pricing.
+					<a href='/pricing' className='text-primary underline'>
+						Pricing
+					</a>
+					.
+				</p>
+			)}
 
 			{/* Модальное окно загрузки */}
 			<Dialog open={isLoading}>
