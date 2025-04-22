@@ -4,12 +4,23 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Scissors } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/hooks/use-toast'
 
 export function Navbar() {
 	const { isAuthenticated, tier, logout } = useAuth()
+	const { toast } = useToast()
 
 	const formattedTier =
 		tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()
+
+	const handleLogout = () => {
+		logout()
+		toast({
+			title: 'Logged out',
+			description: 'You have been successfully logged out',
+		})
+		setTimeout(() => window.location.reload(), 1000)
+	}
 
 	return (
 		<nav className='fixed top-0 w-full z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
@@ -38,7 +49,7 @@ export function Navbar() {
 							<span className='text-sm font-medium text-muted-foreground'>
 								Current plan: {formattedTier}
 							</span>
-							<Button variant='ghost' size='sm' onClick={logout}>
+							<Button variant='ghost' size='sm' onClick={handleLogout}>
 								Logout
 							</Button>
 						</>

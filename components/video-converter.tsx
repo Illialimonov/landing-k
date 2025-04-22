@@ -128,7 +128,7 @@ export function VideoConverter() {
 
 	return (
 		<div className='flex flex-col'>
-			<div className='relative max-w-3xl mx-auto'>
+			<div className='relative max-w-4xl mx-auto'>
 				<div className='absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-75' />
 				<div className='relative bg-background border rounded-lg p-2'>
 					<div className='flex flex-col md:flex-row gap-2'>
@@ -145,7 +145,7 @@ export function VideoConverter() {
 							onValueChange={setFiller}
 							disabled={isLoading || isFreeUserRestricted}
 						>
-							<SelectTrigger className='w-full md:w-[200px]'>
+							<SelectTrigger className='w-full md:w-[200px] h-full'>
 								<SelectValue placeholder='Select filler' />
 							</SelectTrigger>
 							<SelectContent>
@@ -164,7 +164,7 @@ export function VideoConverter() {
 								))}
 							</SelectContent>
 						</Select>
-						<div className='w-full md:w-[120px] flex flex-col gap-2'>
+						<div className='w-full md:w-[160px] flex flex-col gap-2'>
 							<label className='text-sm text-muted-foreground'>
 								Number of Clips: {numberOfClips}
 							</label>
@@ -175,36 +175,39 @@ export function VideoConverter() {
 								max={5}
 								step={1}
 								disabled={isLoading || isFreeUserRestricted}
-								className='w-full'
+								className='w-full cursor-pointer'
 							/>
 						</div>
-						<Button
-							size='lg'
-							onClick={handleConvert}
-							disabled={isLoading}
-							className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-						>
-							{isFreeUserRestricted
-								? 'Choose a Plan'
-								: isLoading
-								? 'Processing...'
-								: 'Get Clips'}
-							{!isLoading && !isFreeUserRestricted && (
-								<ArrowRight className='ml-2 h-5 w-5' />
-							)}
-						</Button>
+						{isFreeUserRestricted ? (
+							<Button
+								size='lg'
+								onClick={handleConvert}
+								disabled={isLoading}
+								className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+							>
+								Choose a Plan
+							</Button>
+						) : (
+							<Button
+								size='lg'
+								onClick={handleConvert}
+								disabled={isLoading}
+								className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+							>
+								{isLoading ? 'Processing...' : 'Get Clips'}
+								{!isLoading && !isFreeUserRestricted && (
+									<ArrowRight className='ml-2 h-5 w-5' />
+								)}
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>
 
 			{isFreeUserRestricted && (
-				<p className='text-center text-muted-foreground mt-4 max-w-3xl mx-auto'>
+				<p className='text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto'>
 					You`ve used your free conversion. Unlock more features by selecting a
 					plan in Pricing.
-					<a href='/pricing' className='text-primary underline'>
-						Pricing
-					</a>
-					.
 				</p>
 			)}
 

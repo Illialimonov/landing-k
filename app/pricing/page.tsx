@@ -141,13 +141,15 @@ export default function PricingPage() {
 			</div>
 
 			<div className='container mx-auto px-4 relative z-10'>
-				<h1 className='text-4xl md:text-5xl font-bold text-center gradient-text mb-4'>
-					Turn YouTube into TikTok Gold
-				</h1>
-				<p className='text-center text-muted-foreground mb-12 max-w-2xl mx-auto'>
-					Paste your YouTube URL, let our AI craft viral TikTok clips, and watch
-					your reach soar.
-				</p>
+				<div className='py-12'>
+					<h1 className='text-4xl md:text-5xl font-bold text-center gradient-text mb-4'>
+						Turn YouTube into TikTok Gold
+					</h1>
+					<p className='text-center text-muted-foreground max-w-2xl mx-auto'>
+						Paste your YouTube URL, let our AI craft viral TikTok clips, and
+						watch your reach soar.
+					</p>
+				</div>
 
 				<div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1440px] mx-auto'>
 					{PLANS.map(plan => {

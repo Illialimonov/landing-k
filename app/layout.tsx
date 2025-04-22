@@ -6,6 +6,8 @@ import { Footer } from '@/components/footer'
 import { Toaster } from '@/components/ui/toaster'
 import localFont from 'next/font/local'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import ClientLayout from '@/components/client-layout'
 
 // Use local font instead of Google font to avoid timeout issues
 const inter = localFont({
@@ -50,16 +52,7 @@ export default function RootLayout({
 	return (
 		<html lang='en' suppressHydrationWarning>
 			<body className={inter.className}>
-				<AuthProvider>
-					<ThemeProvider attribute='class' defaultTheme='dark'>
-						<div className='relative min-h-screen'>
-							<Navbar />
-							<main>{children}</main>
-							<Footer />
-						</div>
-						<Toaster />
-					</ThemeProvider>
-				</AuthProvider>
+				<ClientLayout>{children}</ClientLayout>
 			</body>
 		</html>
 	)
