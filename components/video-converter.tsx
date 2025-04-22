@@ -138,7 +138,7 @@ export function VideoConverter() {
 							value={youtubeUrl}
 							onChange={e => setYoutubeUrl(e.target.value)}
 							disabled={isLoading || isFreeUserRestricted}
-							className='flex-1 text-lg py-6'
+							className='flex-1 text-lg py-3 md:py-6'
 						/>
 						<Select
 							value={filler}
