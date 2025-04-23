@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import $api from '@/lib/http'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/hooks/use-toast'
 
 const PLANS = [
 	{
@@ -112,22 +113,154 @@ const PLANS = [
 
 export default function PricingPage() {
 	const [loading, setLoading] = useState<string | null>(null)
-	const { tier } = useAuth()
+	const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(
+		null
+	)
+	const { isAuthenticated, tier, login } = useAuth()
+	const { toast } = useToast()
+
+	useEffect(() => {
+		const fetchSubscriptionStatus = async () => {
+			if (!isAuthenticated || tier === 'FREE') {
+				console.log(
+					'[PricingPage] Skipping subscription status fetch for non-authenticated or FREE tier user'
+				)
+				setSubscriptionStatus(null)
+				return
+			}
+
+			try {
+				console.log(
+					'[PricingPage] Fetching subscription status from /status-subscription'
+				)
+				const response = await $api.get('/status-subscription')
+				console.log(
+					'[PricingPage] Subscription status received:',
+					response.data
+				)
+				setSubscriptionStatus(response.data)
+			} catch (error: any) {
+				console.error(
+					'[PricingPage] Error fetching subscription status:',
+					error.response?.data || error.message
+				)
+				// Показываем тост только для платных пользователей
+				if (tier === 'PRO' || tier === 'PREMIUM') {
+					toast({
+						variant: 'destructive',
+						title: 'Error',
+						description:
+							error.response?.data?.message ||
+							'Failed to fetch subscription status.',
+					})
+				}
+			}
+		}
+
+		fetchSubscriptionStatus()
+	}, [isAuthenticated, tier, toast])
+
+	// Синхронизация данных пользователя
+	const syncUserData = async () => {
+		try {
+			console.log('[PricingPage] Syncing user data after cancellation')
+			const response = await $api.get('/user/me')
+			const { email, tier, hasOneFreeConversion } = response.data.user_details
+			const hasOneFreeConversionBool = hasOneFreeConversion === 'true'
+			console.log('[PricingPage] User data synced:', {
+				email,
+				tier,
+				hasOneFreeConversion: hasOneFreeConversionBool,
+			})
+
+			localStorage.setItem('userEmail', email)
+			localStorage.setItem('tier', tier)
+			localStorage.setItem(
+				'hasOneFreeConversion',
+				String(hasOneFreeConversionBool)
+			)
+			await login(
+				localStorage.getItem('accessToken')!,
+				localStorage.getItem('refreshToken')!,
+				email,
+				tier,
+				hasOneFreeConversionBool
+			)
+		} catch (error: any) {
+			console.error(
+				'[PricingPage] Error syncing user data:',
+				error.response?.data || error.message
+			)
+			toast({
+				variant: 'destructive',
+				title: 'Error',
+				description: 'Failed to sync user data. Please try logging in again.',
+			})
+		}
+	}
 
 	const handlePayment = async (endpoint: string | null) => {
 		if (!endpoint) return
 
 		setLoading(endpoint)
 		try {
-			const res = await $api.get(endpoint)
-			const url = res.data
+			console.log('[PricingPage] Initiating payment for:', endpoint)
+			const response = await $api.get(endpoint)
+			const url = response.data
 			if (url) {
 				window.location.href = url
 			} else {
-				console.error('No checkout URL returned')
+				console.error('[PricingPage] No checkout URL returned')
+				toast({
+					variant: 'destructive',
+					title: 'Error',
+					description: 'Failed to initiate payment. Please try again.',
+				})
 			}
-		} catch (error) {
-			console.error('Payment initiation failed:', error)
+		} catch (error: any) {
+			console.error(
+				'[PricingPage] Payment initiation failed:',
+				error.response?.data || error.message
+			)
+			toast({
+				variant: 'destructive',
+				title: 'Error',
+				description: 'Failed to initiate payment. Please try again.',
+			})
+		} finally {
+			setLoading(null)
+		}
+	}
+
+	const handleCancelSubscription = async () => {
+		setLoading('cancel')
+		try {
+			console.log('[PricingPage] Sending cancel subscription request')
+			const response = await $api.post('/cancel-subscription')
+			console.log('[PricingPage] Cancel subscription response:', response.data)
+			toast({
+				title: 'Success',
+				description: response.data || 'Your subscription has been cancelled.',
+			})
+
+			// Синхронизируем данные пользователя
+			await syncUserData()
+
+			// Обновляем статус подписки
+			const statusResponse = await $api.get('/status-subscription')
+			setSubscriptionStatus(statusResponse.data)
+		} catch (error: any) {
+			console.error(
+				'[PricingPage] Cancel subscription failed:',
+				error.response?.data || error.message
+			)
+			toast({
+				variant: 'destructive',
+				title: 'Error',
+				description:
+					error.response?.data?.message ||
+					'Failed to cancel subscription. Please try again.',
+			})
 		} finally {
 			setLoading(null)
 		}
@@ -154,6 +287,13 @@ export default function PricingPage() {
 				<div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1440px] mx-auto'>
 					{PLANS.map(plan => {
 						const isCurrentPlan = plan.tier === tier
+						const isPaidPlan = plan.tier === 'PRO' || plan.tier === 'PREMIUM'
+						const canCancel =
+							isAuthenticated &&
+							isPaidPlan &&
+							isCurrentPlan &&
+							subscriptionStatus === 'active'
+
 						return (
 							<div
 								key={plan.name}
@@ -194,17 +334,30 @@ export default function PricingPage() {
 											<p className='font-semibold'>{plan.attractiveInfo}</p>
 										)}
 									</div>
-									<button
-										onClick={() => handlePayment(plan.endpoint)}
-										disabled={
-											!plan.endpoint ||
-											loading === plan.endpoint ||
-											isCurrentPlan
-										}
-										className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition disabled:opacity-50'
-									>
-										{isCurrentPlan ? 'Current Plan' : plan.buttonText}
-									</button>
+									<div className='flex flex-col gap-4'>
+										<button
+											onClick={() => handlePayment(plan.endpoint)}
+											disabled={
+												!plan.endpoint ||
+												loading === plan.endpoint ||
+												isCurrentPlan
+											}
+											className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition disabled:opacity-50'
+										>
+											{isCurrentPlan ? 'Current Plan' : plan.buttonText}
+										</button>
+										{canCancel && (
+											<button
+												onClick={handleCancelSubscription}
+												disabled={loading === 'cancel'}
+												className='w-full py-3 rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white font-semibold hover:from-red-600 hover:to-red-800 transition disabled:opacity-50'
+											>
+												{loading === 'cancel'
+													? 'Cancelling...'
+													: 'Cancel Subscription'}
+											</button>
+										)}
+									</div>
 								</div>
 							</div>
 						)

@@ -7,7 +7,7 @@ import { useGoogleLogin } from '@react-oauth/google'
 import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
-import { Button } from 'react-day-picker'
+import { Button } from '@/components/ui/button'
 
 export default function Register() {
 	const [email, setEmail] = useState('')

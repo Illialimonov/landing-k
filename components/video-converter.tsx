@@ -55,7 +55,7 @@ export function VideoConverter() {
 	const [estimatedTime, setEstimatedTime] = useState('')
 	const { toast } = useToast()
 	const router = useRouter()
-	const { isAuthenticated, tier, hasOneFreeConversion } = useAuth()
+	const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth()
 
 	// Расчёт примерного времени ожидания
 	useEffect(() => {
@@ -76,7 +76,39 @@ export function VideoConverter() {
 		}
 	}, [isLoading, numberOfClips])
 
-	const isFreeUserRestricted = tier === 'FREE' && hasOneFreeConversion
+	const isFreeUserRestricted =
+		isAuthenticated && tier === 'FREE' && hasOneFreeConversion === true
+
+	const syncUserData = async () => {
+		try {
+			console.log('[VideoConverter] Syncing user data after conversion')
+			const res = await $api.get('/user/me')
+			const { email, tier, hasOneFreeConversion } = res.data
+			console.log(res.data)
+
+			localStorage.setItem('userEmail', email)
+			localStorage.setItem('tier', tier)
+			localStorage.setItem('hasOneFreeConversion', String(hasOneFreeConversion))
+			await login(
+				localStorage.getItem('accessToken')!,
+				localStorage.getItem('refreshToken')!,
+				email,
+				tier,
+				hasOneFreeConversion
+			)
+		} catch (error: any) {
+			console.error(
+				'[VideoConverter] Error syncing user data:',
+				error.response?.data || error.message
+			)
+			toast({
+				variant: 'destructive',
+				title: 'Error',
+				description: 'Failed to sync user data. Please try logging in again.',
+			})
+			router.push('/login')
+		}
+	}
 
 	const handleConvert = async () => {
 		if (!isAuthenticated) {
@@ -85,6 +117,11 @@ export function VideoConverter() {
 		}
 
 		if (isFreeUserRestricted) {
+			toast({
+				variant: 'destructive',
+				title: 'Limit Reached',
+				description: 'You’ve used your free conversion. Please select a plan.',
+			})
 			router.push('/pricing')
 			return
 		}
@@ -101,13 +138,16 @@ export function VideoConverter() {
 		setIsLoading(true)
 		setProgress(0)
 		try {
-			const response = await $api.post('/create', {
+			const res = await $api.post('/create', {
 				youtubeURL: youtubeUrl,
 				filler,
 				numberOfClips,
 			})
-			console.log('Conversion response:', response.data)
-			setClips(response.data)
+			console.log('Conversion response:', res.data)
+			setClips(res.data)
+
+			await syncUserData()
+
 			setProgress(100)
 			toast({
 				title: 'Success',
@@ -116,11 +156,15 @@ export function VideoConverter() {
 			setYoutubeUrl('')
 		} catch (err: any) {
 			console.error('Conversion failed:', err.response?.data || err.message)
+			const errorMessage =
+				err.response?.data?.message || 'Failed to generate clips'
 			toast({
 				variant: 'destructive',
 				title: 'Error',
 				description: err.response?.data?.message || 'Failed to generate clips',
 			})
+
+			await syncUserData()
 		} finally {
 			setIsLoading(false)
 		}
@@ -178,7 +222,16 @@ export function VideoConverter() {
 								className='w-full cursor-pointer'
 							/>
 						</div>
-						{isFreeUserRestricted ? (
+						{!isAuthenticated ? (
+							<Button
+								size='lg'
+								onClick={handleConvert}
+								disabled={isLoading}
+								className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+							>
+								Login
+							</Button>
+						) : isFreeUserRestricted ? (
 							<Button
 								size='lg'
 								onClick={handleConvert}
@@ -204,12 +257,17 @@ export function VideoConverter() {
 				</div>
 			</div>
 
-			{isFreeUserRestricted && (
+			{!isAuthenticated ? (
+				<p className='text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto'>
+					You are not logged in. Log in to your account and select a plan in
+					Pricing.
+				</p>
+			) : isFreeUserRestricted ? (
 				<p className='text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto'>
 					You`ve used your free conversion. Unlock more features by selecting a
 					plan in Pricing.
 				</p>
-			)}
+			) : null}
 
 			{/* Модальное окно загрузки */}
 			<Dialog open={isLoading}>
