@@ -52,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setTier('FREE')
 				setHasOneFreeConversion(false)
 				return
-				return
 			}
 
 			try {
@@ -75,46 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					'[AuthProvider] Error fetching user data:',
 					error.response?.data || error.message
 				)
-				if (error.response?.status === 401 && refreshToken) {
-					// Пытаемся обновить токен
-					try {
-						console.log('[AuthProvider] Attempting to refresh token')
-						const refreshResponse = await $api.post('/user/refresh-token', {
-							token: refreshToken,
-						})
-						const { access_token, refresh_token, userDetails } =
-							refreshResponse.data
-						console.log('[AuthProvider] Token refreshed:', {
-							access_token,
-							userDetails,
-						})
-
-						// Обновляем localStorage и состояние
-						localStorage.setItem('accessToken', access_token)
-						localStorage.setItem('refreshToken', refresh_token)
-						localStorage.setItem('userEmail', userDetails.email)
-						localStorage.setItem('tier', userDetails.tier)
-						localStorage.setItem(
-							'hasOneFreeConversion',
-							String(userDetails.hasOneFreeConversion)
-						)
-						setIsAuthenticated(true)
-						setUserEmail(userDetails.email)
-						setTier(userDetails.tier)
-						setHasOneFreeConversion(userDetails.hasOneFreeConversion)
-					} catch (refreshErr: any) {
-						console.error(
-							'[AuthProvider] Token refresh failed:',
-							refreshErr.response?.data || refreshErr.message
-						)
-						logout()
-						router.push('/login')
-					}
-				} else {
-					console.log('[AuthProvider] No valid tokens, logging out')
-					logout()
-					router.push('/login')
-				}
+				logout()
+				router.push('/login')
 			}
 		}
 
