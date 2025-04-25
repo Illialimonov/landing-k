@@ -118,7 +118,7 @@ export default function PricingPage() {
 	)
 	const { isAuthenticated, tier: authTier, login } = useAuth()
 	const { toast } = useToast()
-	const tier = 'PRO'
+	const tier = authTier
 	console.log(tier)
 
 	useEffect(() => {
