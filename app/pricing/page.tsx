@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import $api from '@/lib/http'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
@@ -116,11 +116,20 @@ export default function PricingPage() {
 	const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(
 		null
 	)
-	const { isAuthenticated, tier, login } = useAuth()
+	const { isAuthenticated, tier: authTier, login } = useAuth()
 	const { toast } = useToast()
+	const tier = 'PRO'
+	console.log(tier)
 
 	useEffect(() => {
 		const fetchSubscriptionStatus = async () => {
+			console.log(
+				'[PricingPage] Checking conditions for fetching subscription status:',
+				{
+					isAuthenticated,
+					tier,
+				}
+			)
 			if (!isAuthenticated || tier === 'FREE') {
 				console.log(
 					'[PricingPage] Skipping subscription status fetch for non-authenticated or FREE tier user'
@@ -154,6 +163,7 @@ export default function PricingPage() {
 							'Failed to fetch subscription status.',
 					})
 				}
+				setSubscriptionStatus(null)
 			}
 		}
 
@@ -233,6 +243,15 @@ export default function PricingPage() {
 	}
 
 	const handleCancelSubscription = async () => {
+		if (tier === 'FREE') {
+			toast({
+				variant: 'destructive',
+				title: 'No Subscription',
+				description: 'You do not have an active subscription to cancel.',
+			})
+			return
+		}
+
 		setLoading('cancel')
 		try {
 			console.log('[PricingPage] Sending cancel subscription request')
@@ -247,8 +266,16 @@ export default function PricingPage() {
 			await syncUserData()
 
 			// Обновляем статус подписки
-			const statusResponse = await $api.get('/status-subscription')
-			setSubscriptionStatus(statusResponse.data)
+			try {
+				const statusResponse = await $api.get('/status-subscription')
+				setSubscriptionStatus(statusResponse.data)
+			} catch (error: any) {
+				console.error(
+					'[PricingPage] Error updating subscription status:',
+					error.response?.data || error.message
+				)
+				setSubscriptionStatus(null)
+			}
 		} catch (error: any) {
 			console.error(
 				'[PricingPage] Cancel subscription failed:',
@@ -288,11 +315,17 @@ export default function PricingPage() {
 					{PLANS.map(plan => {
 						const isCurrentPlan = plan.tier === tier
 						const isPaidPlan = plan.tier === 'PRO' || plan.tier === 'PREMIUM'
-						const canCancel =
-							isAuthenticated &&
-							isPaidPlan &&
-							isCurrentPlan &&
-							subscriptionStatus === 'active'
+
+						const canCancel = isAuthenticated && isPaidPlan && isCurrentPlan
+
+						console.log('[PricingPage] Plan check:', {
+							plan: plan.name,
+							isAuthenticated,
+							isPaidPlan,
+							isCurrentPlan,
+							subscriptionStatus,
+							canCancel,
+						})
 
 						return (
 							<div
