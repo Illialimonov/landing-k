@@ -153,7 +153,7 @@ export default function Register() {
 							{isLoading ? (
 								<>
 									<Loader2 className='mr-2 h-5 w-5 animate-spin' />
-									Signin up...
+									SIGNING UP...
 								</>
 							) : (
 								'Sign up'

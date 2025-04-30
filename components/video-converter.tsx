@@ -62,7 +62,7 @@ export function VideoConverter() {
 		if (isLoading) {
 			const minTime = numberOfClips * 60 // 1 минута на клип
 			const maxTime = numberOfClips * 120 // 2 минуты на клип
-			setEstimatedTime(`~${minTime}–${maxTime} seconds`)
+			setEstimatedTime(`~${minTime}–${maxTime} секунд`)
 
 			// Симуляция прогресса
 			const interval = setInterval(() => {
@@ -76,12 +76,9 @@ export function VideoConverter() {
 		}
 	}, [isLoading, numberOfClips])
 
-	const isFreeUserRestricted =
-		isAuthenticated && tier === 'FREE' && hasOneFreeConversion === true
-
 	const syncUserData = async () => {
 		try {
-			console.log('[VideoConverter] Syncing user data after conversion')
+			console.log('[VideoConverter] Синхронизация данных пользователя после конвертации')
 			const res = await $api.get('/user/me')
 			const { email, tier, hasOneFreeConversion } = res.data
 			console.log(res.data)
@@ -98,13 +95,13 @@ export function VideoConverter() {
 			)
 		} catch (error: any) {
 			console.error(
-				'[VideoConverter] Error syncing user data:',
+				'[VideoConverter] Ошибка синхронизации данных пользователя:',
 				error.response?.data || error.message
 			)
 			toast({
 				variant: 'destructive',
-				title: 'Error',
-				description: 'Failed to sync user data. Please try logging in again.',
+				title: 'Ошибка',
+				description: 'Не удалось синхронизировать данные пользователя. Пожалуйста, войдите снова.',
 			})
 			router.push('/login')
 		}
@@ -112,15 +109,20 @@ export function VideoConverter() {
 
 	const handleConvert = async () => {
 		if (!isAuthenticated) {
+			toast({
+				variant: 'destructive',
+				title: 'Не авторизован',
+				description: 'Пожалуйста, войдите в аккаунт для продолжения.',
+			})
 			router.push('/login')
 			return
 		}
 
-		if (isFreeUserRestricted) {
+		if (tier === 'FREE' && hasOneFreeConversion === false) {
 			toast({
 				variant: 'destructive',
-				title: 'Limit Reached',
-				description: 'You’ve used your free conversion. Please select a plan.',
+				title: 'Лимит достигнут',
+				description: 'Вы использовали бесплатную конверсию. Выберите платный тариф.',
 			})
 			router.push('/pricing')
 			return
@@ -129,8 +131,8 @@ export function VideoConverter() {
 		if (!youtubeUrl.trim()) {
 			toast({
 				variant: 'destructive',
-				title: 'Error',
-				description: 'Please enter a YouTube URL',
+				title: 'Ошибка',
+				description: 'Пожалуйста, введите URL видео с YouTube',
 			})
 			return
 		}
@@ -143,25 +145,25 @@ export function VideoConverter() {
 				filler,
 				numberOfClips,
 			})
-			console.log('Conversion response:', res.data)
+			console.log('Ответ конвертации:', res.data)
 			setClips(res.data)
 
 			await syncUserData()
 
 			setProgress(100)
 			toast({
-				title: 'Success',
-				description: 'Clips have been generated successfully!',
+				title: 'Успех',
+				description: 'Клипы успешно сгенерированы!',
 			})
 			setYoutubeUrl('')
 		} catch (err: any) {
-			console.error('Conversion failed:', err.response?.data || err.message)
+			console.error('Ошибка конвертации:', err.response?.data || err.message)
 			const errorMessage =
-				err.response?.data?.message || 'Failed to generate clips'
+				err.response?.data?.message || 'Не удалось сгенерировать клипы'
 			toast({
 				variant: 'destructive',
-				title: 'Error',
-				description: err.response?.data?.message || 'Failed to generate clips',
+				title: 'Ошибка',
+				description: errorMessage,
 			})
 
 			await syncUserData()
@@ -178,19 +180,19 @@ export function VideoConverter() {
 					<div className='flex flex-col md:flex-row gap-2'>
 						<Input
 							type='text'
-							placeholder='Paste YouTube video URL'
+							placeholder='Вставьте URL видео с YouTube'
 							value={youtubeUrl}
 							onChange={e => setYoutubeUrl(e.target.value)}
-							disabled={isLoading || isFreeUserRestricted}
+							disabled={isLoading || (tier === 'FREE' && hasOneFreeConversion === false)}
 							className='flex-1 text-lg py-3 md:py-6'
 						/>
 						<Select
 							value={filler}
 							onValueChange={setFiller}
-							disabled={isLoading || isFreeUserRestricted}
+							disabled={isLoading || (tier === 'FREE' && hasOneFreeConversion === false)}
 						>
 							<SelectTrigger className='w-full md:w-[200px] h-full'>
-								<SelectValue placeholder='Select filler' />
+								<SelectValue placeholder='Выберите наполнитель' />
 							</SelectTrigger>
 							<SelectContent>
 								{FILLER_OPTIONS.map((option, index) => (
@@ -210,7 +212,7 @@ export function VideoConverter() {
 						</Select>
 						<div className='w-full md:w-[160px] flex flex-col gap-2'>
 							<label className='text-sm text-muted-foreground'>
-								Number of Clips: {numberOfClips}
+								Количество клипов: {numberOfClips}
 							</label>
 							<Slider
 								value={[numberOfClips]}
@@ -218,7 +220,7 @@ export function VideoConverter() {
 								min={1}
 								max={5}
 								step={1}
-								disabled={isLoading || isFreeUserRestricted}
+								disabled={isLoading || (tier === 'FREE' && hasOneFreeConversion === false)}
 								className='w-full cursor-pointer'
 							/>
 						</div>
@@ -229,16 +231,16 @@ export function VideoConverter() {
 								disabled={isLoading}
 								className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
 							>
-								Login
+								Войти
 							</Button>
-						) : isFreeUserRestricted ? (
+						) : tier === 'FREE' && hasOneFreeConversion === false ? (
 							<Button
 								size='lg'
 								onClick={handleConvert}
 								disabled={isLoading}
 								className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
 							>
-								Choose a Plan
+								Выбрать тариф
 							</Button>
 						) : (
 							<Button
@@ -247,8 +249,8 @@ export function VideoConverter() {
 								disabled={isLoading}
 								className='w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
 							>
-								{isLoading ? 'Processing...' : 'Get Clips'}
-								{!isLoading && !isFreeUserRestricted && (
+								{isLoading ? 'Обработка...' : 'Получить клипы'}
+								{!isLoading && !(tier === 'FREE' && hasOneFreeConversion === false) && (
 									<ArrowRight className='ml-2 h-5 w-5' />
 								)}
 							</Button>
@@ -259,13 +261,11 @@ export function VideoConverter() {
 
 			{!isAuthenticated ? (
 				<p className='text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto'>
-					You are not logged in. Log in to your account and select a plan in
-					Pricing.
+					Вы не вошли в систему. Войдите в аккаунт и выберите тариф на странице цен.
 				</p>
-			) : isFreeUserRestricted ? (
+			) : tier === 'FREE' && hasOneFreeConversion === false ? (
 				<p className='text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto'>
-					You`ve used your free conversion. Unlock more features by selecting a
-					plan in Pricing.
+					Вы использовали бесплатную конверсию. Разблокируйте больше возможностей, выбрав тариф на странице цен.
 				</p>
 			) : null}
 
@@ -273,10 +273,9 @@ export function VideoConverter() {
 			<Dialog open={isLoading}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Generating Clips</DialogTitle>
+						<DialogTitle>Генерация клипов</DialogTitle>
 						<DialogDescription>
-							Please wait while we process your video. Estimated time:{' '}
-							{estimatedTime}
+							Пожалуйста, подождите, пока мы обрабатываем ваше видео. Примерное время: {estimatedTime}
 						</DialogDescription>
 					</DialogHeader>
 					<CustomProgress value={progress} className='w-full' />

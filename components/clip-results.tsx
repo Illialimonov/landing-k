@@ -112,7 +112,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
 									key={idx}
 									className='text-sm text-primary bg-primary/10 rounded-full px-2 py-1'
 								>
-									#{hashtag}
+									{hashtag}
 								</span>
 							))}
 						</div>
