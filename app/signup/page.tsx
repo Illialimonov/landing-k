@@ -48,10 +48,13 @@ function RegisterContent() {
   const handleGoogleRegister = async (credentialResponse: any) => {
     try {
       console.log('Google OAuth ответ:', credentialResponse)
+      if (!credentialResponse.credential) {
+        throw new Error('credential отсутствует в Google OAuth ответе')
+      }
       const decoded: any = jwtDecode(credentialResponse.credential)
       const googleEmail = decoded.email
       console.log('Отправка запроса на регистрацию через Google:', {
-        credential: credentialResponse.credential,
+        credentials: credentialResponse.credential,
       })
       const res = await $api.post('/user/google', {
         credentials: credentialResponse.credential,
@@ -69,7 +72,7 @@ function RegisterContent() {
       }
     } catch (err: any) {
       console.error('Ошибка регистрации через Google:', err.response?.data || err.message)
-      setError(err.response?.data?.message || 'Ошибка регистрации через Google')
+      setError(err.response?.data?.message || err.message || 'Ошибка регистрации через Google')
     }
   }
 

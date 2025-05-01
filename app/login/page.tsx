@@ -44,10 +44,13 @@ function LoginContent() {
   const handleGoogleLogin = async (credentialResponse: any) => {
     try {
       console.log('Google OAuth ответ:', credentialResponse)
+      if (!credentialResponse.credential) {
+        throw new Error('credential отсутствует в Google OAuth ответе')
+      }
       const decoded: any = jwtDecode(credentialResponse.credential)
       const googleEmail = decoded.email
       console.log('Отправка запроса на вход через Google:', {
-        credential: credentialResponse.credential,
+        credentials: credentialResponse.credential,
       })
       const res = await $api.post('/user/google', {
         credentials: credentialResponse.credential,
@@ -64,7 +67,7 @@ function LoginContent() {
       }
     } catch (err: any) {
       console.error('Ошибка входа через Google:', err.response?.data || err.message)
-      setError(err.response?.data?.message || 'Ошибка входа через Google')
+      setError(err.response?.data?.message || err.message || 'Ошибка входа через Google')
     }
   }
 
@@ -87,7 +90,7 @@ function LoginContent() {
       <div className='container mx-auto px-4 relative z-10'>
         <div className='max-w-md mx-auto bg-secondary/50 rounded-xl p-8 backdrop-blur-sm'>
           <h2 className='text-3xl md:text-4xl font-bold text-center gradient-text mb-6'>
-            Вход
+            Login
           </h2>
           {error && <p className='text-red-500 text-center mb-4'>{error}</p>}
           <form onSubmit={handleLogin} className='space-y-6'>
@@ -106,7 +109,7 @@ function LoginContent() {
             </div>
             <div>
               <label className='block text-muted-foreground mb-2' htmlFor='password'>
-                Пароль
+                Password
               </label>
               <input
                 type='password'
@@ -125,10 +128,10 @@ function LoginContent() {
               {isLoading ? (
                 <>
                   <Loader2 className='mr-2 h-5 w-5 animate-spin' />
-                  Вход...
+                  Login...
                 </>
               ) : (
-                'Войти'
+                'Login'
               )}
             </Button>
           </form>
@@ -163,13 +166,13 @@ function LoginContent() {
                 fill='#EA4335'
               />
             </svg>
-            Продолжить с Google
+            Continue with Google
           </Button>
 
           <p className='text-center text-muted-foreground mt-6'>
             Еще нет аккаунта?{' '}
             <a href='/signup' className='text-primary hover:underline'>
-              Зарегистрироваться
+              signup
             </a>
           </p>
         </div>
