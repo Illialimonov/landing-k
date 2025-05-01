@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Замените на ваш Google Client ID
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID'
 
 function LoginContent() {
@@ -44,23 +43,31 @@ function LoginContent() {
   const handleGoogleLogin = async (credentialResponse: any) => {
     try {
       console.log('Google OAuth ответ:', credentialResponse)
-      if (!credentialResponse.credential) {
-        throw new Error('credential отсутствует в Google OAuth ответе')
+      // Проверяем наличие access_token
+      if (!credentialResponse.access_token) {
+        throw new Error('access_token отсутствует в Google OAuth ответе')
       }
-      const decoded: any = jwtDecode(credentialResponse.credential)
-      const googleEmail = decoded.email
+      // Декодируем ID token, если он доступен, или используем email из ответа
+      let googleEmail = ''
+      if (credentialResponse.credential) {
+        const decoded: any = jwtDecode(credentialResponse.credential)
+        googleEmail = decoded.email
+      } else {
+        // Если ID token недоступен, сервер должен получить email
+        googleEmail = 'unknown'
+      }
       console.log('Отправка запроса на вход через Google:', {
-        credentials: credentialResponse.credential,
+        access_token: credentialResponse.access_token,
       })
       const res = await $api.post('/user/google', {
-        credentials: credentialResponse.credential,
+        access_token: credentialResponse.access_token,
       })
       console.log('Ответ входа через Google:', res.data)
       const { access_token, refresh_token, user_details } = res.data || {}
       const tier = user_details?.tier || 'FREE'
       const hasOneFreeConversion = user_details?.hasOneFreeConversion === 'true'
       if (access_token && refresh_token) {
-        await login(access_token, refresh_token, googleEmail, tier, hasOneFreeConversion)
+        await login(access_token, refresh_token, googleEmail || user_details?.email, tier, hasOneFreeConversion)
         router.push('/')
       } else {
         setError('Ошибка входа через Google: токены не получены')
@@ -77,7 +84,8 @@ function LoginContent() {
       console.error('Ошибка Google OAuth:', error)
       setError('Ошибка входа через Google')
     },
-    flow: 'implicit', // Используем implicit flow для получения credentials
+    flow: 'implicit',
+    scope: 'email profile openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
   })
 
   return (
@@ -90,7 +98,7 @@ function LoginContent() {
       <div className='container mx-auto px-4 relative z-10'>
         <div className='max-w-md mx-auto bg-secondary/50 rounded-xl p-8 backdrop-blur-sm'>
           <h2 className='text-3xl md:text-4xl font-bold text-center gradient-text mb-6'>
-            Login
+            Вход
           </h2>
           {error && <p className='text-red-500 text-center mb-4'>{error}</p>}
           <form onSubmit={handleLogin} className='space-y-6'>
@@ -109,7 +117,7 @@ function LoginContent() {
             </div>
             <div>
               <label className='block text-muted-foreground mb-2' htmlFor='password'>
-                Password
+                Пароль
               </label>
               <input
                 type='password'
@@ -128,10 +136,10 @@ function LoginContent() {
               {isLoading ? (
                 <>
                   <Loader2 className='mr-2 h-5 w-5 animate-spin' />
-                  Login...
+                  Вход...
                 </>
               ) : (
-                'Login'
+                'Войти'
               )}
             </Button>
           </form>
@@ -158,7 +166,7 @@ function LoginContent() {
                 fill='#34A853'
               />
               <path
-                d='M5.53 14.22c-.23-.69-.36-1.43-.36-2.22s.13-1.53.36-2.22V6.77H2.07C1.39 8.09 1 9.61 1 11.5s.39 3.41 1.07 4.73l3.46 içindeki -2.01z'
+                d='M5.53 14.22c-.23-.69-.36-1.43-.36-2.22s.13-1.53.36-2.22V6.77H2.07C1.39 8.09 1 9.61 1 11.5s.39 3.41 1.07 4.73l3.46-2.01z'
                 fill='#FBBC05'
               />
               <path
@@ -166,13 +174,13 @@ function LoginContent() {
                 fill='#EA4335'
               />
             </svg>
-            Continue with Google
+            Продолжить с Google
           </Button>
 
           <p className='text-center text-muted-foreground mt-6'>
             Еще нет аккаунта?{' '}
             <a href='/signup' className='text-primary hover:underline'>
-              signup
+              Зарегистрироваться
             </a>
           </p>
         </div>

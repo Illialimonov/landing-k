@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Замените на ваш Google Client ID
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID'
 
 function RegisterContent() {
@@ -48,23 +47,31 @@ function RegisterContent() {
   const handleGoogleRegister = async (credentialResponse: any) => {
     try {
       console.log('Google OAuth ответ:', credentialResponse)
-      if (!credentialResponse.credential) {
-        throw new Error('credential отсутствует в Google OAuth ответе')
+      // Проверяем наличие access_token
+      if (!credentialResponse.access_token) {
+        throw new Error('access_token отсутствует в Google OAuth ответе')
       }
-      const decoded: any = jwtDecode(credentialResponse.credential)
-      const googleEmail = decoded.email
+      // Декодируем ID token, если он доступен, или используем email из ответа
+      let googleEmail = ''
+      if (credentialResponse.credential) {
+        const decoded: any = jwtDecode(credentialResponse.credential)
+        googleEmail = decoded.email
+      } else {
+        // Если ID token недоступен, можно запросить email через Google API на сервере
+        googleEmail = 'unknown' // Сервер должен получить email
+      }
       console.log('Отправка запроса на регистрацию через Google:', {
-        credentials: credentialResponse.credential,
+        access_token: credentialResponse.access_token,
       })
       const res = await $api.post('/user/google', {
-        credentials: credentialResponse.credential,
+        access_token: credentialResponse.access_token,
       })
       console.log('Ответ регистрации через Google:', res.data)
       const { access_token, refresh_token, user_details } = res.data || {}
       const tier = user_details?.tier || 'FREE'
       const hasOneFreeConversion = user_details?.hasOneFreeConversion === 'true'
       if (access_token && refresh_token) {
-        await login(access_token, refresh_token, googleEmail, tier, hasOneFreeConversion)
+        await login(access_token, refresh_token, googleEmail || user_details?.email, tier, hasOneFreeConversion)
         router.push('/')
       } else {
         setError('Ошибка регистрации через Google: токены не получены')
@@ -82,7 +89,8 @@ function RegisterContent() {
       console.error('Ошибка Google OAuth:', error)
       setError('Ошибка регистрации через Google')
     },
-    flow: 'implicit', // Используем implicit flow для получения credentials
+    flow: 'implicit',
+    scope: 'email profile openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
   })
 
   return (
@@ -126,10 +134,7 @@ function RegisterContent() {
               />
             </div>
             <div>
-              <label
-                className='block text-muted-foreground mb-2'
-                htmlFor='repeatedPassword'
-              >
+              <label className='block text-muted-foreground mb-2' htmlFor='repeatedPassword'>
                 Повторите пароль
               </label>
               <input
