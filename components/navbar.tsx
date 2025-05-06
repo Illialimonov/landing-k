@@ -23,7 +23,7 @@ export function Navbar() {
 	}
 
 	return (
-		<nav className='fixed top-0 w-full z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+		<nav className='px-5 fixed top-0 w-full z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
 			<div className='container mx-auto flex h-16 items-center justify-between'>
 				<Link href='/' className='flex items-center space-x-2'>
 					<Scissors className='h-6 w-6 text-primary' />

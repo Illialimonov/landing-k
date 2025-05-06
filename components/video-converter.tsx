@@ -157,9 +157,9 @@ export function VideoConverter() {
 			})
 			setYoutubeUrl('')
 		} catch (err: any) {
-			console.error('Ошибка конвертации:', err.response?.data || err.message)
+			console.error('Ошибка конвертации:', err.response?.data.error || err.message)
 			const errorMessage =
-				err.response?.data?.message || 'Не удалось сгенерировать клипы'
+				err.response?.data?.error || 'Не удалось сгенерировать клипы'
 			toast({
 				variant: 'destructive',
 				title: 'Ошибка',

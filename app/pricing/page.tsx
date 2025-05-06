@@ -288,9 +288,7 @@ export default function PricingPage() {
           <h1 className='text-4xl md:text-5xl font-bold text-center gradient-text mb-4'>
             Turn YouTube into TikTok Gold
           </h1>
-          <p className='text-center text-muted-foreground max-w-2xl mx-auto'>
-            Paste your YouTube URL, let our AI craft viral TikTok clips, and watch your reach soar.
-          </p>
+       
           {isAuthenticated && subscriptionStatus?.message && (
             <p className='text-center text-muted-foreground max-w-2xl mx-auto mt-4'>
               Subscription Status: {subscriptionStatus.message}

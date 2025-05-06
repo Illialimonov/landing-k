@@ -154,6 +154,8 @@ export default function VideoCarousel() {
 	}, [queue, videoStates, loadVideo])
 
 	return (
+  <>
+    <h3 className='flex justify-center text-4xl md:text-5xl font-bold '>Made with ViralCuts</h3>
 		<section className='py-16 bg-background'>
 			<div className='overflow-x-auto no-scrollbar px-4'>
 				<div className='flex gap-4 md:gap-6 md:justify-center min-w-[1000px] md:min-w-[1500px]'>
@@ -206,7 +208,7 @@ export default function VideoCarousel() {
 					))}
 				</div>
 			</div>
-		</section>
+		</section></>
 	)
 }
 

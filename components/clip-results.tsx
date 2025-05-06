@@ -98,7 +98,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
             className='bg-secondary/50 rounded-lg p-4 border border-muted-foreground/20 hover:shadow-lg transition-shadow duration-300'
           >
             {/* Видео */}
-            <div className='relative w-full h-48 md:h-64 rounded-lg overflow-hidden mb-4'>
+            <div className='relative w-full aspect-[11/16] rounded-lg overflow-hidden mb-4'>
               {loadedVideos[index] ? (
                 errorVideos[index] ? (
                   <div className='absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-red-500/30 text-white text-sm p-4'>

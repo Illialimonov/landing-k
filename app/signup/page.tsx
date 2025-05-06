@@ -8,6 +8,8 @@ import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID'
 
@@ -17,6 +19,8 @@ function RegisterContent() {
   const [repeatedPassword, setRepeatedPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showVerifyPopup, setShowVerifyPopup] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
   const router = useRouter()
   const { login } = useAuth()
 
@@ -35,7 +39,7 @@ function RegisterContent() {
         repeatedPassword,
       })
       console.log('Ответ регистрации:', res.data)
-      router.push('/login')
+      setShowVerifyPopup(true) // Показываем попап для ввода кода
     } catch (err: any) {
       console.error('Ошибка регистрации:', err.response?.data || err.message)
       setError(err.response?.data?.message || 'Ошибка регистрации')
@@ -44,21 +48,39 @@ function RegisterContent() {
     }
   }
 
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      console.log('Отправка кода верификации:', { code: verificationCode })
+      const res = await $api.post('/user/verify-email', {
+        code: parseInt(verificationCode),
+      })
+      console.log('Ответ верификации:', res.data)
+      if (res.status === 200) {
+        setShowVerifyPopup(false)
+        router.push('/login') // Успешная верификация, редирект на логин
+      }
+    } catch (err: any) {
+      console.error('Ошибка верификации:', err.response?.data || err.message)
+      setError(err.response?.data?.message || 'Ошибка верификации кода')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleGoogleRegister = async (credentialResponse: any) => {
     try {
       console.log('Google OAuth ответ:', credentialResponse)
-      // Проверяем наличие access_token
       if (!credentialResponse.access_token) {
         throw new Error('access_token отсутствует в Google OAuth ответе')
       }
-      // Декодируем ID token, если он доступен, или используем email из ответа
       let googleEmail = ''
       if (credentialResponse.credential) {
         const decoded: any = jwtDecode(credentialResponse.credential)
         googleEmail = decoded.email
       } else {
-        // Если ID token недоступен, можно запросить email через Google API на сервере
-        googleEmail = 'unknown' // Сервер должен получить email
+        googleEmail = 'unknown'
       }
       console.log('Отправка запроса на регистрацию через Google:', {
         access_token: credentialResponse.access_token,
@@ -111,12 +133,12 @@ function RegisterContent() {
               <label className='block text-muted-foreground mb-2' htmlFor='email'>
                 Email
               </label>
-              <input
+              <Input
                 type='email'
                 id='email'
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className='w-full p-3 rounded-lg bg-background border border-muted-foreground/20 text-white focus:outline-none focus:ring-2 focus:ring-primary'
+                className='w-full'
                 required
               />
             </div>
@@ -124,12 +146,12 @@ function RegisterContent() {
               <label className='block text-muted-foreground mb-2' htmlFor='password'>
                 Пароль
               </label>
-              <input
+              <Input
                 type='password'
                 id='password'
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className='w-full p-3 rounded-lg bg-background border border-muted-foreground/20 text-white focus:outline-none focus:ring-2 focus:ring-primary'
+                className='w-full'
                 required
               />
             </div>
@@ -137,19 +159,19 @@ function RegisterContent() {
               <label className='block text-muted-foreground mb-2' htmlFor='repeatedPassword'>
                 Повторите пароль
               </label>
-              <input
+              <Input
                 type='password'
                 id='repeatedPassword'
                 value={repeatedPassword}
                 onChange={e => setRepeatedPassword(e.target.value)}
-                className='w-full p-3 rounded-lg bg-background border border-muted-foreground/20 text-white focus:outline-none focus:ring-2 focus:ring-primary'
+                className='w-full'
                 required
               />
             </div>
             <Button
               type='submit'
               disabled={isLoading}
-              className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition flex items-center justify-center'
+              className='w-full'
             >
               {isLoading ? (
                 <>
@@ -166,7 +188,7 @@ function RegisterContent() {
 
           <Button
             onClick={() => googleRegister()}
-            className='w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition flex items-center justify-center gap-2'
+            className='w-full flex items-center justify-center gap-2'
             disabled={isLoading}
           >
             <svg
@@ -176,7 +198,7 @@ function RegisterContent() {
               xmlns='http://www.w3.org/2000/svg'
             >
               <path
-                d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.51h5.84c-.25 1.37-.98 2.53-2.07 3.3v2.74h3.36c1.96-1.81 3.09-4.47 3.09-7.8z'
+                d='M22.56 12.25c0-.78-.07-1.53-.20-2.25H12v4.51h5.84c-.25 1.37-.98 2.53-2.07 3.3v2.74h3.36c1.96-1.81 3.09-4.47 3.09-7.80z'
                 fill='#4285F4'
               />
               <path
@@ -203,6 +225,45 @@ function RegisterContent() {
           </p>
         </div>
       </div>
+
+      {/* Попап для ввода кода верификации */}
+      <Dialog open={showVerifyPopup} onOpenChange={setShowVerifyPopup}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Подтверждение email</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleVerifyCode} className='space-y-4'>
+            <div>
+              <label className='block text-muted-foreground mb-2' htmlFor='verificationCode'>
+                Введите код, отправленный на ваш email
+              </label>
+              <Input
+                type='text'
+                id='verificationCode'
+                value={verificationCode}
+                onChange={e => setVerificationCode(e.target.value)}
+                className='w-full'
+                required
+              />
+            </div>
+            {error && <p className='text-red-500 text-center'>{error}</p>}
+            <Button
+              type='submit'
+              disabled={isLoading}
+              className='w-full'
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                  Проверка...
+                </>
+              ) : (
+                'Подтвердить'
+              )}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
