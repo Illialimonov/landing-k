@@ -24,8 +24,8 @@ export function ClipResults({ clips }: ClipResultsProps) {
   const handleCopyLink = (link: string) => {
     navigator.clipboard.writeText(link)
     toast({
-      title: 'Скопировано!',
-      description: 'Ссылка скопирована в буфер обмена.',
+      title: 'Copied!',
+      description: 'Link copied to clipboard.',
     })
   }
 
@@ -41,7 +41,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
     })
     setErrorVideos(prev => {
       const newErrors = [...prev]
-      newErrors[index] = false // Сбрасываем ошибку при успешной загрузке
+      newErrors[index] = false // Reset error on successful load
       return newErrors
     })
   }
@@ -49,7 +49,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
   const handleVideoError = (index: number) => {
     setLoadedVideos(prev => {
       const newLoaded = [...prev]
-      newLoaded[index] = true // Скрываем лоадер, чтобы показать ошибку
+      newLoaded[index] = true // Hide loader to show error
       return newLoaded
     })
     setErrorVideos(prev => {
@@ -62,16 +62,16 @@ export function ClipResults({ clips }: ClipResultsProps) {
   const retryLoad = (index: number) => {
     setErrorVideos(prev => {
       const newErrors = [...prev]
-      newErrors[index] = false // Сбрасываем ошибку для повторной попытки
+      newErrors[index] = false // Reset error for retry
       return newErrors
     })
     setLoadedVideos(prev => {
       const newLoaded = [...prev]
-      newLoaded[index] = false // Показываем лоадер снова
+      newLoaded[index] = false // Show loader again
       return newLoaded
     })
     if (videoRefs.current[index]) {
-      videoRefs.current[index]?.load() // Перезагружаем видео
+      videoRefs.current[index]?.load() // Reload video
     }
   }
 
@@ -89,7 +89,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
   return (
     <div className='mt-8 max-w-7xl mx-auto px-4'>
       <h2 className='text-2xl md:text-3xl font-semibold text-white mb-6 text-center'>
-        Сгенерированные клипы
+        Generated Clips
       </h2>
       <div className={`grid ${gridColsClass} gap-4 md:gap-6`}>
         {clips.map((clip, index) => (
@@ -97,17 +97,17 @@ export function ClipResults({ clips }: ClipResultsProps) {
             key={index}
             className='bg-secondary/50 rounded-lg p-4 border border-muted-foreground/20 hover:shadow-lg transition-shadow duration-300'
           >
-            {/* Видео */}
+            {/* Video */}
             <div className='relative w-full aspect-[11/16] rounded-lg overflow-hidden mb-4'>
               {loadedVideos[index] ? (
                 errorVideos[index] ? (
                   <div className='absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-red-500/30 text-white text-sm p-4'>
-                    <p>Не удалось загрузить видео.</p>
+                    <p>Failed to load video.</p>
                     <button
                       onClick={() => retryLoad(index)}
                       className='mt-2 px-4 py-2 bg-primary rounded-lg text-white hover:bg-primary/80'
                     >
-                      Повторить
+                      Retry
                     </button>
                   </div>
                 ) : (
@@ -137,12 +137,12 @@ export function ClipResults({ clips }: ClipResultsProps) {
               )}
             </div>
 
-            {/* Метаданные */}
+            {/* Metadata */}
             <h3 className='text-lg font-medium text-white truncate'>
               {clip.videoName}
             </h3>
             <p className='text-muted-foreground text-sm mt-1'>
-              Длительность: {clip.length}
+              Duration: {clip.length}
             </p>
             <div className='mt-2 flex flex-wrap gap-2'>
               {clip.hashtags.map((hashtag, idx) => (
@@ -155,8 +155,8 @@ export function ClipResults({ clips }: ClipResultsProps) {
               ))}
             </div>
 
-            {/* Кнопки */}
-            <div className='mt-4 flex gap-2'>
+            {/* Buttons */}
+            <div className='mt-4 flex flex-col gap-2'>
               <Button
                 variant='outline'
                 size='sm'
@@ -164,7 +164,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
                 className='flex items-center gap-2'
               >
                 <Copy className='h-4 w-4' />
-                Скопировать ссылку
+                Copy Link
               </Button>
               <Button
                 size='sm'
@@ -172,7 +172,7 @@ export function ClipResults({ clips }: ClipResultsProps) {
                 className='flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
               >
                 <Download className='h-4 w-4' />
-                Скачать
+                Download
               </Button>
             </div>
           </div>
