@@ -46,19 +46,19 @@ const FILLER_OPTIONS = [
   {
     value: "crossy_road",
     label: "Crossy Road",
-    icon: "/icons/image.png", // Placeholder: Pixel chicken
+    icon: "/icons/image.png",
     premiumOnly: true,
   },
   {
     value: "asmr",
     label: "ASMR Cutting",
-    icon: "/icons/unnamed.png", // Placeholder: Soap cutting
+    icon: "/icons/unnamed.png",
     premiumOnly: true,
   },
   {
     value: "subway_surf",
     label: "Subway Surfers",
-    icon: "/icons/unnamed (1).png", // Placeholder: Train runner
+    icon: "/icons/unnamed (1).png",
     premiumOnly: true,
   },
 ];
@@ -66,7 +66,7 @@ const FILLER_OPTIONS = [
 export function VideoConverter() {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [filler, setFiller] = useState("random");
-  const [numberOfClips, setNumberOfClips] = useState(1); // Default to 1
+  const [numberOfClips, setNumberOfClips] = useState(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [clips, setClips] = useState<Clip[]>([]);
   const [progress, setProgress] = useState(0);
@@ -75,26 +75,22 @@ export function VideoConverter() {
   const router = useRouter();
   const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
 
-  // Determine max clips based on tier
   const maxClips = tier === "PREMIUM" ? 5 : tier === "PRO" ? 3 : 1;
 
-  // Ensure numberOfClips doesn't exceed maxClips and is fixed at 1 for FREE tier
   useEffect(() => {
     if (tier === "FREE") {
-      setNumberOfClips(1); // Force 1 for FREE tier
+      setNumberOfClips(1);
     } else if (numberOfClips > maxClips) {
-      setNumberOfClips(maxClips); // Adjust if exceeding max for PRO/PREMIUM
+      setNumberOfClips(maxClips);
     }
   }, [tier, maxClips, numberOfClips]);
 
-  // Calculate estimated wait time
   useEffect(() => {
     if (isLoading) {
-      const minTime = numberOfClips * 60; // 1 minute per clip
-      const maxTime = numberOfClips * 120; // 2 minutes per clip
+      const minTime = numberOfClips * 60;
+      const maxTime = numberOfClips * 120;
       setEstimatedTime(`~${minTime}–${maxTime} seconds`);
 
-      // Simulate progress
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) return prev;
@@ -134,8 +130,7 @@ export function VideoConverter() {
       toast({
         variant: "destructive",
         title: "Error",
-        description:
-          "Failed to synchronize user data. Please log in again.",
+        description: "Failed to synchronize user data. Please log in again.",
       });
       router.push("/login");
     }
@@ -156,8 +151,7 @@ export function VideoConverter() {
       toast({
         variant: "destructive",
         title: "Limit Reached",
-        description:
-          "You have used your free conversion. Please select a paid plan.",
+        description: "You have used your free conversion. Please select a paid plan.",
       });
       router.push("/pricing");
       return;
@@ -172,7 +166,6 @@ export function VideoConverter() {
       return;
     }
 
-    // Validate filler for premium-only options
     const selectedFiller = FILLER_OPTIONS.find((opt) => opt.value === filler);
     if (selectedFiller?.premiumOnly && tier !== "PREMIUM") {
       toast({
@@ -219,6 +212,17 @@ export function VideoConverter() {
       await syncUserData();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Обработчик клика на слайдер
+  const handleSliderClick = () => {
+    if (tier === "FREE") {
+      toast({
+        variant: "destructive",
+        title: "Limit Reached",
+        description: "Free tier is limited to 1 clip. Upgrade to Pro or Premium to create up to 3 or 5 clips!",
+      });
     }
   };
 
@@ -281,13 +285,14 @@ export function VideoConverter() {
                 value={[numberOfClips]}
                 onValueChange={(value) => setNumberOfClips(value[0])}
                 min={1}
-                max={tier === "FREE" ? 1 : maxClips} // Fix max to 1 for FREE tier
+                max={tier === "FREE" ? 1 : maxClips}
                 step={1}
                 disabled={
                   isLoading ||
                   (tier === "FREE" && hasOneFreeConversion === false) ||
-                  tier === "FREE" // Disable slider for FREE tier
+                  tier === "FREE"
                 }
+                onClick={handleSliderClick} // Обработчик клика
                 className="w-full cursor-pointer"
               />
             </div>
@@ -337,7 +342,6 @@ export function VideoConverter() {
         </p>
       ) : null}
 
-      {/* Loading Modal */}
       <Dialog open={isLoading}>
         <DialogContent>
           <DialogHeader>
