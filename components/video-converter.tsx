@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Added useRef
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,6 +74,7 @@ export function VideoConverter() {
   const { toast } = useToast();
   const router = useRouter();
   const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
+  const abortControllerRef = useRef<AbortController | null>(null); // Ref to store AbortController
 
   const maxClips = tier === "PREMIUM" ? 5 : tier === "PRO" ? 3 : 1;
 
@@ -179,12 +180,18 @@ export function VideoConverter() {
 
     setIsLoading(true);
     setProgress(0);
+    abortControllerRef.current = new AbortController(); // Create new AbortController
+
     try {
-      const res = await $api.post("/create", {
-        youtubeURL: youtubeUrl,
-        filler,
-        numberOfClips,
-      });
+      const res = await $api.post(
+        "/create",
+        {
+          youtubeURL: youtubeUrl,
+          filler,
+          numberOfClips,
+        },
+        { signal: abortControllerRef.current.signal } // Pass AbortController signal
+      );
       console.log("Conversion response:", res.data);
       setClips(res.data);
 
@@ -197,21 +204,46 @@ export function VideoConverter() {
       });
       setYoutubeUrl("");
     } catch (err: any) {
-      console.error(
-        "Conversion error:",
-        err.response?.data.error || err.message
-      );
-      const errorMessage =
-        err.response?.data?.error || "Failed to generate clips";
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
+      if (err.name === "AbortError") {
+        console.log("Conversion aborted by user");
+        toast({
+          title: "Cancelled",
+          description: "Video generation was cancelled.",
+        });
+      } else {
+        console.error(
+          "Conversion error:",
+          err.response?.data.error || err.message
+        );
+        const errorMessage =
+          err.response?.data?.error || "Failed to generate clips";
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: errorMessage,
+        });
 
-      await syncUserData();
+        await syncUserData();
+      }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null; // Clean up AbortController
+    }
+  };
+
+  // Handler for when the user tries to close the dialog
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open && isLoading) {
+      const confirmClose = window.confirm(
+        "Are you sure you want to stop generating videos?"
+      );
+      if (confirmClose) {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort(); // Abort the API call
+        }
+        setIsLoading(false); // Close the dialog
+      }
+      // If user cancels, do nothing (dialog stays open)
     }
   };
 
@@ -292,7 +324,7 @@ export function VideoConverter() {
                   (tier === "FREE" && hasOneFreeConversion === false) ||
                   tier === "FREE"
                 }
-                onClick={handleSliderClick} // Обработчик клика
+                onClick={handleSliderClick}
                 className="w-full cursor-pointer"
               />
             </div>
@@ -342,7 +374,7 @@ export function VideoConverter() {
         </p>
       ) : null}
 
-      <Dialog open={isLoading}>
+      <Dialog open={isLoading} onOpenChange={handleDialogOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Generating Clips</DialogTitle>
