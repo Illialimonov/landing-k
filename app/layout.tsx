@@ -43,17 +43,32 @@ export const metadata: Metadata = {
 		icon: '/favicon.jpg',
 	},
 }
-
 export default function RootLayout({
-	children,
+  children,
 }: {
-	children: React.ReactNode
+  children: React.ReactNode
 }) {
-	return (
-		<html lang='en' suppressHydrationWarning>
-			<body className={inter.className}>
-				<ClientLayout>{children}</ClientLayout>
-			</body>
-		</html>
-	)
+  return (
+    <html lang='en' suppressHydrationWarning>
+      <head>
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-W4MXD341BX"
+        ></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-W4MXD341BX');
+      `,
+          }}
+        ></script>
+      </head>
+      <body className={inter.className}>
+        <ClientLayout>{children}</ClientLayout>
+      </body>
+    </html>
+  )
 }
