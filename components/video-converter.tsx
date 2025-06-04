@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react"; // Added useRef
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -71,10 +71,12 @@ export function VideoConverter() {
   const [clips, setClips] = useState<Clip[]>([]);
   const [progress, setProgress] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState("");
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
-  const abortControllerRef = useRef<AbortController | null>(null); // Ref to store AbortController
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const maxClips = tier === "PREMIUM" ? 5 : tier === "PRO" ? 3 : 1;
 
@@ -87,28 +89,19 @@ export function VideoConverter() {
   }, [tier, maxClips, numberOfClips]);
 
   useEffect(() => {
-    if (isLoading) {
-      const minTime = numberOfClips * 60;
-      const maxTime = numberOfClips * 120;
-      setEstimatedTime(`~${minTime}–${maxTime} seconds`);
-
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + 100 / (minTime * 2);
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isLoading, numberOfClips]);
+    // Clean up polling interval when component unmounts
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const syncUserData = async () => {
     try {
       console.log("[VideoConverter] Synchronizing user data after conversion");
       const res = await $api.get("/user/me");
       const { email, tier, hasOneFreeConversion } = res.data;
-      console.log(res.data);
 
       localStorage.setItem("userEmail", email);
       localStorage.setItem("tier", tier);
@@ -134,6 +127,80 @@ export function VideoConverter() {
         description: "Failed to synchronize user data. Please log in again.",
       });
       router.push("/login");
+    }
+  };
+
+  const checkJobStatus = async (jobId: string) => {
+    try {
+      const response = await $api.get(`/${jobId}/status`);
+      const { status, videos } = response.data;
+  
+      if (status === "finished" && videos?.length) {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          setPollingInterval(null); // Только после clearInterval
+        }
+        setClips(videos);
+        setProgress(100);
+        setIsLoading(false);
+        setJobId(null); // очистка jobId
+        toast({
+          title: "Success",
+          description: "Clips successfully generated!",
+        });
+        await syncUserData();
+      } else if (status === "queued" || status === "processing") {
+        const progressValue = status === "queued" ? 10 : 50;
+        setProgress(progressValue);
+      }
+    } catch (error: any) {
+      console.error("Error checking job status:", error);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      setIsLoading(false);
+      setJobId(null);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.error || "Failed to check job status",
+      });
+    }
+  };
+  
+  const startPolling = (jobId: string) => {
+    if (pollingInterval) return; // уже есть активный интервал
+  
+    checkJobStatus(jobId); // сразу первая проверка
+  
+    const interval = setInterval(() => checkJobStatus(jobId), 5000);
+    setPollingInterval(interval);
+  };
+  
+  const cancelJob = async () => {
+    if (!jobId) return;
+    
+    try {
+      await $api.post(`/${jobId}/cancel`);
+      toast({
+        title: "Cancelled",
+        description: "Video generation was cancelled.",
+      });
+    } catch (error: any) {
+      console.error("Error cancelling job:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.error || "Failed to cancel job",
+      });
+    } finally {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      setIsLoading(false);
+      setJobId(null);
     }
   };
 
@@ -180,28 +247,26 @@ export function VideoConverter() {
 
     setIsLoading(true);
     setProgress(0);
-    abortControllerRef.current = new AbortController(); // Create new AbortController
+    abortControllerRef.current = new AbortController();
 
     try {
-      const res = await $api.post(
-        "/create",
+      const response = await $api.post(
+        "/submit",
         {
           youtubeURL: youtubeUrl,
           filler,
           numberOfClips,
         },
-        { signal: abortControllerRef.current.signal } // Pass AbortController signal
+        { signal: abortControllerRef.current.signal }
       );
-      console.log("Conversion response:", res.data);
-      setClips(res.data);
 
-      await syncUserData();
-
-      setProgress(100);
-      toast({
-        title: "Success",
-        description: "Clips successfully generated!",
-      });
+      const { jobId, timeToWaitMin, timeToWaitMax } = response.data;
+      setJobId(jobId);
+      setEstimatedTime(`~${timeToWaitMin}–${timeToWaitMax} minutes`);
+      
+      // Start polling for job status
+      startPolling(jobId);
+      
       setYoutubeUrl("");
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -225,29 +290,21 @@ export function VideoConverter() {
 
         await syncUserData();
       }
-    } finally {
       setIsLoading(false);
-      abortControllerRef.current = null; // Clean up AbortController
     }
   };
 
-  // Handler for when the user tries to close the dialog
   const handleDialogOpenChange = (open: boolean) => {
     if (!open && isLoading) {
       const confirmClose = window.confirm(
         "Are you sure you want to stop generating videos?"
       );
       if (confirmClose) {
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort(); // Abort the API call
-        }
-        setIsLoading(false); // Close the dialog
+        cancelJob();
       }
-      // If user cancels, do nothing (dialog stays open)
     }
   };
 
-  // Обработчик клика на слайдер
   const handleSliderClick = () => {
     if (tier === "FREE") {
       toast({
