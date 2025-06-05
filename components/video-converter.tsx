@@ -72,7 +72,7 @@ export function VideoConverter() {
   const [progress, setProgress] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
@@ -89,13 +89,13 @@ export function VideoConverter() {
   }, [tier, maxClips, numberOfClips]);
 
   useEffect(() => {
-    // Clean up polling interval when component unmounts
     return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
       }
     };
-  }, [pollingInterval]);
+  }, []);
+  
 
   const syncUserData = async () => {
     try {
@@ -136,14 +136,14 @@ export function VideoConverter() {
       const { status, videos } = response.data;
   
       if (status === "finished" && videos?.length) {
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null); // Только после clearInterval
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
         }
         setClips(videos);
         setProgress(100);
         setIsLoading(false);
-        setJobId(null); // очистка jobId
+        setJobId(null);
         toast({
           title: "Success",
           description: "Clips successfully generated!",
@@ -155,9 +155,9 @@ export function VideoConverter() {
       }
     } catch (error: any) {
       console.error("Error checking job status:", error);
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
       setIsLoading(false);
       setJobId(null);
@@ -170,17 +170,15 @@ export function VideoConverter() {
   };
   
   const startPolling = (jobId: string) => {
-    if (pollingInterval) return; // уже есть активный интервал
+    if (pollingRef.current) return;
   
-    checkJobStatus(jobId); // сразу первая проверка
-  
-    const interval = setInterval(() => checkJobStatus(jobId), 5000);
-    setPollingInterval(interval);
+    checkJobStatus(jobId); // initial check
+    pollingRef.current = setInterval(() => checkJobStatus(jobId), 5000);
   };
   
   const cancelJob = async () => {
     if (!jobId) return;
-    
+  
     try {
       await $api.post(`/${jobId}/cancel`);
       toast({
@@ -195,14 +193,15 @@ export function VideoConverter() {
         description: error.response?.data?.error || "Failed to cancel job",
       });
     } finally {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
       setIsLoading(false);
       setJobId(null);
     }
   };
+  
 
   const handleConvert = async () => {
     if (!isAuthenticated) {
