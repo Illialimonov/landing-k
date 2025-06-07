@@ -30,37 +30,14 @@ import { CustomProgress } from "./custom-progress";
 
 const FILLER_OPTIONS = [
   { value: "gta5", label: "GTA 5", icon: "/icons/gta-5.png" },
-  {
-    value: "minecraft",
-    label: "Minecraft Parkour",
-    icon: "/icons/minecraft-parkour.png",
-  },
-  {
-    value: "press",
-    label: "Hydraulic Press",
-    icon: "/icons/hydraulic-press.png",
-  },
+  { value: "minecraft", label: "Minecraft Parkour", icon: "/icons/minecraft-parkour.png" },
+  { value: "press", label: "Hydraulic Press", icon: "/icons/hydraulic-press.png" },
   { value: "truck", label: "Cluster Truck", icon: "/icons/cluster-truck.png" },
   { value: "steep", label: "Steep", icon: "/icons/steep.png" },
   { value: "random", label: "Random", icon: "/icons/random.png" },
-  {
-    value: "crossy_road",
-    label: "Crossy Road",
-    icon: "/icons/image.png",
-    premiumOnly: true,
-  },
-  {
-    value: "asmr",
-    label: "ASMR Cutting",
-    icon: "/icons/unnamed.png",
-    premiumOnly: true,
-  },
-  {
-    value: "subway_surf",
-    label: "Subway Surfers",
-    icon: "/icons/unnamed (1).png",
-    premiumOnly: true,
-  },
+  { value: "crossy_road", label: "Crossy Road", icon: "/icons/image.png", premiumOnly: true },
+  { value: "asmr", label: "ASMR Cutting", icon: "/icons/unnamed.png", premiumOnly: true },
+  { value: "subway_surf", label: "Subway Surfers", icon: "/icons/unnamed (1).png", premiumOnly: true },
 ];
 
 export function VideoConverter() {
@@ -73,6 +50,9 @@ export function VideoConverter() {
   const [estimatedTime, setEstimatedTime] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const totalElapsedRef = useRef<number>(0); // Накопленное время
   const { toast } = useToast();
   const router = useRouter();
   const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
@@ -90,12 +70,10 @@ export function VideoConverter() {
 
   useEffect(() => {
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
     };
   }, []);
-  
 
   const syncUserData = async () => {
     try {
@@ -105,10 +83,7 @@ export function VideoConverter() {
 
       localStorage.setItem("userEmail", email);
       localStorage.setItem("tier", tier);
-      localStorage.setItem(
-        "hasOneFreeConversion",
-        String(hasOneFreeConversion)
-      );
+      localStorage.setItem("hasOneFreeConversion", String(hasOneFreeConversion));
       await login(
         localStorage.getItem("accessToken")!,
         localStorage.getItem("refreshToken")!,
@@ -117,10 +92,7 @@ export function VideoConverter() {
         hasOneFreeConversion
       );
     } catch (error: any) {
-      console.error(
-        "[VideoConverter] Error synchronizing user data:",
-        error.response?.data || error.message
-      );
+      console.error("[VideoConverter] Error synchronizing user data:", error.response?.data || error.message);
       toast({
         variant: "destructive",
         title: "Error",
@@ -134,14 +106,18 @@ export function VideoConverter() {
     try {
       const response = await $api.get(`/${jobId}/status`);
       const { status, videos } = response.data;
-  
+
       if (status === "finished" && videos?.length) {
         if (pollingRef.current) {
           clearInterval(pollingRef.current);
           pollingRef.current = null;
         }
+        if (animationIntervalRef.current) {
+          clearInterval(animationIntervalRef.current);
+          animationIntervalRef.current = null;
+        }
         setClips(videos);
-        setProgress(100);
+        setProgress(100); // Принудительно устанавливаем 100% при завершении
         setIsLoading(false);
         setJobId(null);
         toast({
@@ -149,15 +125,16 @@ export function VideoConverter() {
           description: "Clips successfully generated!",
         });
         await syncUserData();
-      } else if (status === "queued" || status === "processing") {
-        const progressValue = status === "queued" ? 10 : 50;
-        setProgress(progressValue);
       }
     } catch (error: any) {
       console.error("Error checking job status:", error);
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
+      }
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+        animationIntervalRef.current = null;
       }
       setIsLoading(false);
       setJobId(null);
@@ -168,17 +145,17 @@ export function VideoConverter() {
       });
     }
   };
-  
+
   const startPolling = (jobId: string) => {
     if (pollingRef.current) return;
-  
-    checkJobStatus(jobId); // initial check
+
+    checkJobStatus(jobId);
     pollingRef.current = setInterval(() => checkJobStatus(jobId), 5000);
   };
-  
+
   const cancelJob = async () => {
     if (!jobId) return;
-  
+
     try {
       await $api.post(`/${jobId}/cancel`);
       toast({
@@ -197,11 +174,38 @@ export function VideoConverter() {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
       }
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+        animationIntervalRef.current = null;
+      }
       setIsLoading(false);
       setJobId(null);
     }
   };
-  
+
+  const animateProgress = (durationMs: number) => {
+    if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
+
+    const start = performance.now();
+    if (!startTimeRef.current) startTimeRef.current = start;
+    totalElapsedRef.current = 0; // Сбрасываем накопленное время
+    console.log("Starting animation with duration:", durationMs / 1000, "seconds");
+
+    const intervalMs = 1000; // Обновление каждую секунду
+    animationIntervalRef.current = setInterval(() => {
+      totalElapsedRef.current += intervalMs; // Накопляем время с каждым интервалом
+      const progress = Math.min((totalElapsedRef.current / durationMs) * 100, 100);
+      console.log("Progress:", progress.toFixed(2), "% at", totalElapsedRef.current / 1000, "seconds");
+      setProgress(progress);
+
+      // Завершаем только при достижении 100%, игнорируя isLoading
+      if (progress >= 100) {
+        clearInterval(animationIntervalRef.current!);
+        animationIntervalRef.current = null;
+        console.log("Animation completed");
+      }
+    }, intervalMs);
+  };
 
   const handleConvert = async () => {
     if (!isAuthenticated) {
@@ -248,6 +252,9 @@ export function VideoConverter() {
     setProgress(0);
     abortControllerRef.current = new AbortController();
 
+    // Запускаем начальную анимацию с фиксированным временем (например, 2 минуты)
+    animateProgress(2 * 60 * 1000); // 2 минуты в миллисекундах
+
     try {
       const response = await $api.post(
         "/submit",
@@ -262,10 +269,18 @@ export function VideoConverter() {
       const { jobId, timeToWaitMin, timeToWaitMax } = response.data;
       setJobId(jobId);
       setEstimatedTime(`~${timeToWaitMin}–${timeToWaitMax} minutes`);
-      
-      // Start polling for job status
+
+      // Прерываем текущую анимацию и запускаем новую с реальным временем
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+        animationIntervalRef.current = null;
+      }
+      const minTimeMs = timeToWaitMin * 60 * 1000;
+      const maxTimeMs = timeToWaitMax * 60 * 1000;
+      const durationMs = (minTimeMs + maxTimeMs) / 2;
+      animateProgress(durationMs);
+
       startPolling(jobId);
-      
       setYoutubeUrl("");
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -275,12 +290,8 @@ export function VideoConverter() {
           description: "Video generation was cancelled.",
         });
       } else {
-        console.error(
-          "Conversion error:",
-          err.response?.data.error || err.message
-        );
-        const errorMessage =
-          err.response?.data?.error || "Failed to generate clips";
+        console.error("Conversion error:", err.response?.data.error || err.message);
+        const errorMessage = err.response?.data?.error || "Failed to generate clips";
         toast({
           variant: "destructive",
           title: "Error",
@@ -325,17 +336,13 @@ export function VideoConverter() {
               placeholder="Paste YouTube video URL"
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              disabled={
-                isLoading || (tier === "FREE" && hasOneFreeConversion === false)
-              }
+              disabled={isLoading || (tier === "FREE" && hasOneFreeConversion === false)}
               className="flex-1 text-lg py-3 md:py-6"
             />
             <Select
               value={filler}
               onValueChange={setFiller}
-              disabled={
-                isLoading || (tier === "FREE" && hasOneFreeConversion === false)
-              }
+              disabled={isLoading || (tier === "FREE" && hasOneFreeConversion === false)}
             >
               <SelectTrigger className="w-full md:w-[200px] h-full">
                 <SelectValue placeholder="Select filler" />
@@ -356,9 +363,7 @@ export function VideoConverter() {
                       />
                       <span>{option.label}</span>
                       {option.premiumOnly && (
-                        <span className="ml-2 text-xs text-primary">
-                          (Premium)
-                        </span>
+                        <span className="ml-2 text-xs text-primary">(Premium)</span>
                       )}
                     </div>
                   </SelectItem>
@@ -375,11 +380,7 @@ export function VideoConverter() {
                 min={1}
                 max={tier === "FREE" ? 1 : maxClips}
                 step={1}
-                disabled={
-                  isLoading ||
-                  (tier === "FREE" && hasOneFreeConversion === false) ||
-                  tier === "FREE"
-                }
+                disabled={isLoading || (tier === "FREE" && hasOneFreeConversion === false) || tier === "FREE"}
                 onClick={handleSliderClick}
                 className="w-full cursor-pointer"
               />
@@ -410,10 +411,9 @@ export function VideoConverter() {
                 className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 {isLoading ? "Processing..." : "Get Clips"}
-                {!isLoading &&
-                  !(tier === "FREE" && hasOneFreeConversion === false) && (
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  )}
+                {!isLoading && !(tier === "FREE" && hasOneFreeConversion === false) && (
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                )}
               </Button>
             )}
           </div>
