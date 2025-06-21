@@ -64,7 +64,7 @@ const PLANS = [
         description: " - Optimized for TikTok and Reels",
       },
       {
-        title: "📏 Supports YouTube Videos up to 30 Minutes Long",
+        title: "📏 Supports YouTube Videos up to 25 Minutes Long",
       },
       {
         title: "🔥 Auto-Generated Hashtags",
