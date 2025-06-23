@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const GOOGLE_CLIENT_ID =
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
@@ -29,6 +30,7 @@ function RegisterContent() {
   const [verificationCode, setVerificationCode] = useState("");
   const router = useRouter();
   const { login } = useAuth();
+  const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +68,11 @@ function RegisterContent() {
       if (res.status === 200) {
         setShowVerifyPopup(false);
         router.push("/login"); // Successful verification, redirect to login
+        toast({
+          title: "Notification",
+          description:
+            "Your account has been created successfully! You may now login",
+        });
       }
     } catch (err: any) {
       console.error("Verification error:", err.response?.data || err.message);
