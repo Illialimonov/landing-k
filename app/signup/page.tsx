@@ -50,7 +50,7 @@ function RegisterContent() {
       setShowVerifyPopup(true); // Show popup for entering verification code
     } catch (err: any) {
       console.error("Registration error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Registration error");
+      setError(err.response?.data?.error || "Registration error");
     } finally {
       setIsLoading(false);
     }
