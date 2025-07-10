@@ -31,7 +31,7 @@ const PLANS = [
       },
     ],
     attractiveInfo:
-      "🚀 Ready to go unlimited? Upgrade to Pro or Premium anytime.",
+      "🚀 Ready to go unlimited? Upgrade to Pro or Premium anytime.\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B",
     buttonText: "Get Started",
     endpoint: null,
   },
@@ -39,6 +39,7 @@ const PLANS = [
     name: "Pro",
     tier: "PRO",
     price: "$19",
+    originalPrice: "$39", // <- added
     period: "/month",
     description:
       "For solo creators looking to automate and grow their short-form content.",
@@ -64,7 +65,7 @@ const PLANS = [
         description: " - Optimized for TikTok and Reels",
       },
       {
-        title: "📏 Supports YouTube Videos up to 25 Minutes Long",
+        title: "📏 75 Credits to Add Viral Subtitles",
       },
       {
         title: "🔥 Auto-Generated Hashtags",
@@ -77,10 +78,11 @@ const PLANS = [
   {
     name: "Premium",
     tier: "PREMIUM",
+    originalPrice: "$59", // <- added
     price: "$29",
     period: "/month",
     description:
-      "For power users and agencies who want full creative control and maximum output. \n\nEverything in Pro, plus:",
+      "For power users and agencies who want full creative control and maximum output.",
     includes: [
       {
         title: "✂️ Advanced AI Smart Splitting",
@@ -99,7 +101,7 @@ const PLANS = [
         description: " - High-definition clips for a professional look",
       },
       {
-        title: "📏 Supports YouTube Videos up to 60 Minutes Long",
+        title: "📏 200 Credits to Add Viral Subtitles",
       },
       {
         title: "🔥 Auto-Generated Hashtags for Virality",
@@ -370,13 +372,28 @@ export default function PricingPage() {
                   </div>
 
                   <div className="max-lg:mb-4">
-                    <div className="text-3xl font-bold text-white mb-4">
-                      {plan.price}
-                      <span className="text-lg font-normal text-muted-foreground">
+                    <div
+                      className={`text-3xl font-bold text-white mb-1 ${
+                        !plan.originalPrice ? "mt-4" : ""
+                      }`}
+                    >
+                      {plan.originalPrice ? (
+                        <>
+                          <span className="line-through text-muted-foreground mr-2 font-normal leading-tight">
+                            {plan.originalPrice}
+                          </span>
+
+                          {plan.price}
+                        </>
+                      ) : (
+                        plan.price
+                      )}
+                      <span className="text-lg font-normal text-muted-foreground ml-1">
                         {plan.period}
                       </span>
                     </div>
-                    <ul className="space-y-4 mb-6">
+
+                    <ul className="space-y-3 mb-4">
                       {plan.includes.map((item) => (
                         <li
                           key={item.title}

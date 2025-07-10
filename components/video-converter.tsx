@@ -474,7 +474,7 @@ export function VideoConverter() {
                 disabled={isLoading}
                 className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
-                Login
+                Get Clips
               </Button>
             ) : tier === "FREE" && hasOneFreeConversion === false ? (
               <Button
