@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -30,14 +32,37 @@ import { CustomProgress } from "./custom-progress";
 
 const FILLER_OPTIONS = [
   { value: "gta5", label: "GTA 5", icon: "/icons/gta-5.png" },
-  { value: "minecraft", label: "Minecraft Parkour", icon: "/icons/minecraft-parkour.png" },
-  { value: "press", label: "Hydraulic Press", icon: "/icons/hydraulic-press.png" },
+  {
+    value: "minecraft",
+    label: "Minecraft Parkour",
+    icon: "/icons/minecraft-parkour.png",
+  },
+  {
+    value: "press",
+    label: "Hydraulic Press",
+    icon: "/icons/hydraulic-press.png",
+  },
   { value: "truck", label: "Cluster Truck", icon: "/icons/cluster-truck.png" },
   { value: "steep", label: "Steep", icon: "/icons/steep.png" },
   { value: "random", label: "Random", icon: "/icons/random.png" },
-  { value: "crossy_road", label: "Crossy Road", icon: "/icons/image.png", premiumOnly: true },
-  { value: "asmr", label: "ASMR Cutting", icon: "/icons/unnamed.png", premiumOnly: true },
-  { value: "subway_surf", label: "Subway Surfers", icon: "/icons/unnamed (1).png", premiumOnly: true },
+  {
+    value: "crossy_road",
+    label: "Crossy Road",
+    icon: "/icons/image.png",
+    premiumOnly: true,
+  },
+  {
+    value: "asmr",
+    label: "ASMR Cutting",
+    icon: "/icons/unnamed.png",
+    premiumOnly: true,
+  },
+  {
+    value: "subway_surf",
+    label: "Subway Surfers",
+    icon: "/icons/unnamed (1).png",
+    premiumOnly: true,
+  },
 ];
 
 export function VideoConverter() {
@@ -57,6 +82,7 @@ export function VideoConverter() {
   const router = useRouter();
   const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [includeSubtitles, setIncludeSubtitles] = useState(false);
 
   const maxClips = tier === "PREMIUM" ? 5 : tier === "PRO" ? 3 : 1;
 
@@ -71,7 +97,8 @@ export function VideoConverter() {
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
-      if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
+      if (animationIntervalRef.current)
+        clearInterval(animationIntervalRef.current);
     };
   }, []);
 
@@ -83,7 +110,10 @@ export function VideoConverter() {
 
       localStorage.setItem("userEmail", email);
       localStorage.setItem("tier", tier);
-      localStorage.setItem("hasOneFreeConversion", String(hasOneFreeConversion));
+      localStorage.setItem(
+        "hasOneFreeConversion",
+        String(hasOneFreeConversion)
+      );
       await login(
         localStorage.getItem("accessToken")!,
         localStorage.getItem("refreshToken")!,
@@ -92,7 +122,10 @@ export function VideoConverter() {
         hasOneFreeConversion
       );
     } catch (error: any) {
-      console.error("[VideoConverter] Error synchronizing user data:", error.response?.data || error.message);
+      console.error(
+        "[VideoConverter] Error synchronizing user data:",
+        error.response?.data || error.message
+      );
       toast({
         variant: "destructive",
         title: "Error",
@@ -141,7 +174,8 @@ export function VideoConverter() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.error || "Failed to check job status",
+        description:
+          error.response?.data?.error || "Failed to check job status",
       });
     }
   };
@@ -184,18 +218,32 @@ export function VideoConverter() {
   };
 
   const animateProgress = (durationMs: number) => {
-    if (animationIntervalRef.current) clearInterval(animationIntervalRef.current);
+    if (animationIntervalRef.current)
+      clearInterval(animationIntervalRef.current);
 
     const start = performance.now();
     if (!startTimeRef.current) startTimeRef.current = start;
     totalElapsedRef.current = 0; // Сбрасываем накопленное время
-    console.log("Starting animation with duration:", durationMs / 1000, "seconds");
+    console.log(
+      "Starting animation with duration:",
+      durationMs / 1000,
+      "seconds"
+    );
 
     const intervalMs = 1000; // Обновление каждую секунду
     animationIntervalRef.current = setInterval(() => {
       totalElapsedRef.current += intervalMs; // Накопляем время с каждым интервалом
-      const progress = Math.min((totalElapsedRef.current / durationMs) * 100, 100);
-      console.log("Progress:", progress.toFixed(2), "% at", totalElapsedRef.current / 1000, "seconds");
+      const progress = Math.min(
+        (totalElapsedRef.current / durationMs) * 100,
+        100
+      );
+      console.log(
+        "Progress:",
+        progress.toFixed(2),
+        "% at",
+        totalElapsedRef.current / 1000,
+        "seconds"
+      );
       setProgress(progress);
 
       // Завершаем только при достижении 100%, игнорируя isLoading
@@ -222,7 +270,8 @@ export function VideoConverter() {
       toast({
         variant: "destructive",
         title: "Limit Reached",
-        description: "You have used your free conversion. Please select a paid plan.",
+        description:
+          "You have used your free conversion. Please select a paid plan.",
       });
       router.push("/pricing");
       return;
@@ -262,6 +311,7 @@ export function VideoConverter() {
           youtubeURL: youtubeUrl,
           filler,
           numberOfClips,
+          subs: includeSubtitles,
         },
         { signal: abortControllerRef.current.signal }
       );
@@ -290,8 +340,12 @@ export function VideoConverter() {
           description: "Video generation was cancelled.",
         });
       } else {
-        console.error("Conversion error:", err.response?.data.error || err.message);
-        const errorMessage = err.response?.data?.error || "Failed to generate clips";
+        console.error(
+          "Conversion error:",
+          err.response?.data.error || err.message
+        );
+        const errorMessage =
+          err.response?.data?.error || "Failed to generate clips";
         toast({
           variant: "destructive",
           title: "Error",
@@ -320,7 +374,8 @@ export function VideoConverter() {
       toast({
         variant: "destructive",
         title: "Limit Reached",
-        description: "Free tier is limited to 1 clip. Upgrade to Pro or Premium to create up to 3 or 5 clips!",
+        description:
+          "Free tier is limited to 1 clip. Upgrade to Pro or Premium to create up to 3 or 5 clips!",
       });
     }
   };
@@ -336,13 +391,17 @@ export function VideoConverter() {
               placeholder="Paste YouTube video URL"
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              disabled={isLoading || (tier === "FREE" && hasOneFreeConversion === false)}
+              disabled={
+                isLoading || (tier === "FREE" && hasOneFreeConversion === false)
+              }
               className="flex-1 text-lg py-3 md:py-6"
             />
             <Select
               value={filler}
               onValueChange={setFiller}
-              disabled={isLoading || (tier === "FREE" && hasOneFreeConversion === false)}
+              disabled={
+                isLoading || (tier === "FREE" && hasOneFreeConversion === false)
+              }
             >
               <SelectTrigger className="w-full md:w-[200px] h-full">
                 <SelectValue placeholder="Select filler" />
@@ -363,7 +422,9 @@ export function VideoConverter() {
                       />
                       <span>{option.label}</span>
                       {option.premiumOnly && (
-                        <span className="ml-2 text-xs text-primary">(Premium)</span>
+                        <span className="ml-2 text-xs text-primary">
+                          (Premium)
+                        </span>
                       )}
                     </div>
                   </SelectItem>
@@ -380,11 +441,32 @@ export function VideoConverter() {
                 min={1}
                 max={tier === "FREE" ? 1 : maxClips}
                 step={1}
-                disabled={isLoading || (tier === "FREE" && hasOneFreeConversion === false) || tier === "FREE"}
+                disabled={
+                  isLoading ||
+                  (tier === "FREE" && hasOneFreeConversion === false) ||
+                  tier === "FREE"
+                }
                 onClick={handleSliderClick}
                 className="w-full cursor-pointer"
               />
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="include-subtitles"
+                checked={includeSubtitles}
+                onCheckedChange={(checked: boolean) =>
+                  setIncludeSubtitles(checked)
+                }
+                disabled={isLoading}
+              />
+              <Label
+                htmlFor="include-subtitles"
+                className="text-sm text-muted-foreground"
+              >
+                Include subtitles
+              </Label>
+            </div>
+
             {!isAuthenticated ? (
               <Button
                 size="lg"
@@ -411,9 +493,10 @@ export function VideoConverter() {
                 className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 {isLoading ? "Processing..." : "Get Clips"}
-                {!isLoading && !(tier === "FREE" && hasOneFreeConversion === false) && (
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                )}
+                {!isLoading &&
+                  !(tier === "FREE" && hasOneFreeConversion === false) && (
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  )}
               </Button>
             )}
           </div>
@@ -422,11 +505,13 @@ export function VideoConverter() {
 
       {!isAuthenticated ? (
         <p className="text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto">
-          You are not logged in. Please log in and select a plan on the pricing page.
+          You are not logged in. Please log in and select a plan on the pricing
+          page.
         </p>
       ) : tier === "FREE" && hasOneFreeConversion === false ? (
         <p className="text-center text-lg text-muted-foreground mt-4 max-w-3xl mx-auto">
-          You have used your free conversion. Unlock more features by selecting a plan on the pricing page.
+          You have used your free conversion. Unlock more features by selecting
+          a plan on the pricing page.
         </p>
       ) : null}
 
@@ -435,7 +520,8 @@ export function VideoConverter() {
           <DialogHeader>
             <DialogTitle>Generating Clips</DialogTitle>
             <DialogDescription>
-              Please wait while we process your video. Estimated time: {estimatedTime}
+              Please wait while we process your video. Estimated time:{" "}
+              {estimatedTime}
             </DialogDescription>
           </DialogHeader>
           <CustomProgress value={progress} className="w-full" />
