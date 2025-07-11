@@ -386,7 +386,7 @@ export function VideoConverter() {
 
   return (
     <div className="flex flex-col">
-      <div className="relative max-w-7xl mx-auto">
+      <div className="relative w-full max-w-screen-xl mx-auto">
         <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-75" />
         <div className="relative bg-background border rounded-lg p-2">
           <div className="flex flex-col md:flex-row gap-2">
@@ -398,7 +398,7 @@ export function VideoConverter() {
               disabled={
                 isLoading || (tier === "FREE" && hasOneFreeConversion === false)
               }
-              className="flex-1 text-lg py-3 md:py-6"
+              className="flex-[2] text-lg py-3 md:py-6 placeholder-white bg-[#1c1c1c] border border-purple-600 focus:outline-none focus:ring-2 focus:ring-pink-500 text-white"
             />
             <Select
               value={filler}
@@ -407,7 +407,7 @@ export function VideoConverter() {
                 isLoading || (tier === "FREE" && hasOneFreeConversion === false)
               }
             >
-              <SelectTrigger className="w-full md:w-[150px] h-full">
+              <SelectTrigger className="w-full md:w-[150px] h-full placeholder-white bg-[#1c1c1c] border border-purple-600 focus:outline-none focus:ring-2 focus:ring-pink-500 text-white">
                 <SelectValue placeholder="Select filler" />
               </SelectTrigger>
               <SelectContent>
@@ -454,7 +454,7 @@ export function VideoConverter() {
                 className="w-full cursor-pointer"
               />
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center md:items-center md:justify-start md:space-x-2">
               <Checkbox
                 id="include-subtitles"
                 checked={includeSubtitles}
@@ -462,13 +462,16 @@ export function VideoConverter() {
                   setIncludeSubtitles(checked)
                 }
                 disabled={isLoading}
+                className="mr-2 md:mr-0"
               />
               <Label
                 htmlFor="include-subtitles"
-                className="text-sm text-muted-foreground"
+                className="text-sm text-muted-foreground leading-tight"
               >
-                Include subtitles <br />
-                Available credits: {subCredits}
+                <div className="flex flex-col md:items-start items-center text-center md:text-left">
+                  Include subtitles
+                  <span>Available credits: {subCredits}</span>
+                </div>
               </Label>
             </div>
 
