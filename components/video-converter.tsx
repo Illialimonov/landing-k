@@ -386,7 +386,7 @@ export function VideoConverter() {
 
   return (
     <div className="flex flex-col">
-      <div className="relative max-w-4xl mx-auto">
+      <div className="relative max-w-6xl mx-auto">
         <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-75" />
         <div className="relative bg-background border rounded-lg p-2">
           <div className="flex flex-col md:flex-row gap-2">
