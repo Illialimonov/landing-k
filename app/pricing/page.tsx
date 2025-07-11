@@ -31,7 +31,7 @@ const PLANS = [
       },
     ],
     attractiveInfo:
-      "🚀 Ready to go unlimited? Upgrade to Pro or Premium anytime.\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B",
+      "🚀 Ready to go unlimited? Upgrade to Pro or Premium anytime.",
     buttonText: "Get Started",
     endpoint: null,
   },
@@ -361,12 +361,12 @@ export default function PricingPage() {
                 className="group relative bg-secondary/50 rounded-xl p-6 backdrop-blur-sm border border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:scale-105"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative flex flex-col justify-between h-full">
+                <div className="relative flex flex-col justify-start h-full">
                   <div>
-                    <h2 className="text-2xl font-semibold text-white mb-2">
+                    <h2 className="text-2xl font-semibold text-white mb-1">
                       {plan.name}
                     </h2>
-                    <p className="text-muted-foreground mb-2">
+                    <p className="text-muted-foreground mb-1">
                       {plan.description}
                     </p>
                   </div>
@@ -374,7 +374,7 @@ export default function PricingPage() {
                   <div className="max-lg:mb-4">
                     <div
                       className={`text-3xl font-bold text-white mb-1 ${
-                        !plan.originalPrice ? "mt-4" : ""
+                        !plan.originalPrice ? "mt-1" : ""
                       }`}
                     >
                       {plan.originalPrice ? (
@@ -410,7 +410,7 @@ export default function PricingPage() {
                       <p className="font-semibold">{plan.attractiveInfo}</p>
                     )}
                   </div>
-                  <div className="flex flex-col gap-4">
+                  <div className="mt-auto flex flex-col gap-4">
                     <button
                       onClick={() => handlePayment(plan.endpoint)}
                       disabled={
@@ -422,6 +422,7 @@ export default function PricingPage() {
                     >
                       {isCurrentPlan ? "Current Plan" : plan.buttonText}
                     </button>
+
                     {canCancel && (
                       <button
                         onClick={handleCancelSubscription}
