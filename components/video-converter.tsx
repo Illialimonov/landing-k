@@ -80,7 +80,8 @@ export function VideoConverter() {
   const totalElapsedRef = useRef<number>(0); // Накопленное время
   const { toast } = useToast();
   const router = useRouter();
-  const { isAuthenticated, tier, hasOneFreeConversion, login } = useAuth();
+  const { isAuthenticated, tier, hasOneFreeConversion, subCredits, login } =
+    useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
   const [includeSubtitles, setIncludeSubtitles] = useState(false);
 
@@ -105,11 +106,14 @@ export function VideoConverter() {
   const syncUserData = async () => {
     try {
       console.log("[VideoConverter] Synchronizing user data after conversion");
+
       const res = await $api.get("/user/me");
-      const { email, tier, hasOneFreeConversion } = res.data;
+      const { email, tier, hasOneFreeConversion, subCredits } = res.data;
 
       localStorage.setItem("userEmail", email);
       localStorage.setItem("tier", tier);
+      localStorage.setItem("subCredits", subCredits);
+
       localStorage.setItem(
         "hasOneFreeConversion",
         String(hasOneFreeConversion)
@@ -463,7 +467,8 @@ export function VideoConverter() {
                 htmlFor="include-subtitles"
                 className="text-sm text-muted-foreground"
               >
-                Include subtitles
+                Include subtitles <br />
+                Available credits: {subCredits}
               </Label>
             </div>
 
