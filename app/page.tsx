@@ -190,6 +190,22 @@ export default function Home() {
 
       <Features />
       <Testimonials />
+      <div className="flex justify-end items-center space-x-4 mt-2">
+        <a href="https://fazier.com/launches/viralcuts.xyz" target="_blank">
+          <img
+            src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched&theme=dark"
+            width={120}
+            alt="Fazier badge"
+          />
+        </a>
+        <a href="https://fazier.com/launches/viralcuts.xyz" target="_blank">
+          <img
+            src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=featured&theme=dark"
+            width={250}
+            alt="Fazier badge"
+          />
+        </a>
+      </div>
     </div>
   );
 }
